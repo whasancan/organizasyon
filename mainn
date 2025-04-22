@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İşlemci Zamanlama Simülasyonu ve Karşılaştırması - Sunum Sürümü</title>
+
+    <!-- CSS Kodları Başlangıcı (Canlı Dark Navy & Energetic Accents - Sunum İçin Optimize Edildi) -->
+    <style>
+        /*
+        CSS KODLARI: Arayüzün görünümünü ve yerleşimini belirler.
+        Tema renkleri, boşluklar, yazı tipleri, buton görünümleri,
+        tablo ve Gantt şeması stilleri bu bölümde yönetilir.
+        */
+
+        /* -- Tema Değişkenleri -- */
+        /* Bu değişkenler, tema renklerini ve bazı tekrar eden değerleri merkezi olarak yönetir.
+           Tema değiştirmek isterseniz bu kısım yeterli olacaktır. */
+        :root {
+            --primary-bg: #0e1a2a; /* Koyu Lacivert Zemin */
+            --secondary-bg: #1c2b3a; /* Bölüm/Kart Zeminleri */
+            --text-color: #eef2ff; /* Çok Açık Mavi/Mor Yazı */
+            --header-bg: #071320; /* Çok Koyu Başlık Arka Planı */
+            --header-text: #a7ffeb; /* Mint/Aqua Neon (Başlık Yazısı) */
+
+            --accent-blue: #4fc3f7; /* Parlak Mavi (Birincil Vurgu/Gölge) */
+            --accent-purple: #b39ddb; /* Yumuşak Mor (İkincil Vurgu/Border) */
+            --accent-yellow: #ffeb3b; /* Parlak Sarı (Min Değer Vurgusu) */
+            --accent-red: #ff5252; /* Parlak Kırmızı (Hata/Sil Butonu) */
+
+            --border-color: #3e5064; /* Yumuşak Kenarlık */
+            --input-bg: #2a3a4b; /* Input Zemini */
+
+            --glow-subtle: 0 0 4px var(--accent-blue); /* Hafif Mavi Parlama */
+            --glow-strong: 0 0 8px var(--accent-blue), 0 0 15px var(--accent-blue), 0 0 25px rgba(79, 195, 247, 0.4); /* Güçlü Mavi Parlama */
+
+            --gantt-scale: 15px; /* Gantt şeması 1 zaman biriminin piksel karşılığı (görsel genişlik) */
+
+            /* Gantt Çubuğu Renkleri (Enerjik Tonlar) - JS bu listeden çeker */
+            --color-p1: #00f0b5; /* Bright Teal */
+            --color-p2: #40c4ff; /* Sky Blue */
+            --color-p3: #f50057; /* Rose */
+            --color-p4: #e040fb; /* Purple */
+            --color-p5: #ffc107; /* Amber */
+            --color-p6: #64dd17; /* Light Green */
+            --color-p7: #ff8a80; /* Red */
+            --color-p8: #8c9eff; /* Indigo */
+            --color-p9: #b2ff59; /* Lime */
+            --color-p10: #ffea00; /* Yellow */
+             /* JS içinde daha fazla renk olabilir veya döngü yapılır */
+
+         }
+
+
+        /* -- Genel HTML Elementleri -- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8; /* Okunurluk için satır aralığı */
+            margin: 0;
+            padding: 0;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            scroll-behavior: smooth; /* Sayfa içinde kaydırma efekti */
+        }
+
+        header {
+            background: var(--header-bg); /* Başlık arka planı */
+            color: var(--header-text); /* Başlık yazı rengi */
+            padding: 2rem 0;
+            text-align: center;
+            margin-bottom: 3rem;
+            border-bottom: 3px solid var(--accent-blue);
+            box-shadow: var(--glow-strong); /* Güçlü mavi parlama efekti */
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 3.2rem;
+            color: var(--header-text);
+            text-shadow: 0 0 8px rgba(167, 255, 235, 0.8); /* Yazı parlama */
+        }
+         header p {
+             margin-top: 0.6rem;
+             color: #a0a4d9;
+             font-size: 1.1em;
+         }
+
+        main {
+            max-width: 1200px;
+            margin: auto;
+            padding: 0 1.8rem;
+        }
+
+        section {
+            background: var(--secondary-bg); /* Bölüm/Kart arka planı */
+            padding: 3rem;
+            margin-bottom: 3rem;
+            border-radius: 12px; /* Yuvarlak köşeler */
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); /* Belirgin gölge */
+             position: relative;
+        }
+         /* Bölümler arasına dekoratif alt çizgi */
+         section::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            height: 2px;
+            background: var(--accent-purple);
+            box-shadow: 0 0 8px rgba(179, 157, 219, 0.6); /* Mor parlama */
+             border-radius: 1px;
+         }
+         /* Son section'da alt çizgi olmasın */
+         main section:last-of-type::after {
+             display: none;
+         }
+
+
+        section h2 {
+            color: var(--accent-blue); /* Bölüm başlıkları mavi */
+            border-bottom: 2px solid var(--accent-purple); /* Mor alt çizgi */
+            padding-bottom: 1.2rem;
+            margin-bottom: 2.5rem;
+             text-shadow: 0 0 5px rgba(79, 195, 247, 0.5); /* Başlık parlama */
+        }
+
+         h3 {
+            color: var(--text-color); /* Alt başlıklar ana yazı rengi */
+            margin-top: 2.5rem;
+            margin-bottom: 1.2rem;
+             border-bottom: 1px dashed var(--border-color); /* Kesik çizgi */
+             padding-bottom: 0.8rem;
+             font-size: 1.4em;
+        }
+
+
+        /* -- Giriş Alanları Stilleri -- */
+        .input-area {
+            display: flex; /* Elemanları yan yana hizala */
+            flex-wrap: wrap; /* Ekran daralınca alt satıra geç */
+            gap: 2rem; /* Elemanlar arası boşluk */
+            margin-bottom: 2rem;
+            align-items: flex-end; /* Düğmeleri inputlarla aynı hizada tut */
+        }
+
+        .input-group {
+             flex: 1; /* Eşit yer kapla (mümkünse) */
+             min-width: 200px; /* Minimum genişlik */
+             max-width: 300px; /* Maksimum genişlik */
+             display: flex;
+             flex-direction: column; /* Label ve inputu alt alta koy */
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.8rem;
+            color: var(--accent-purple); /* Etiketler mor */
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+        .input-area input[type="text"],
+        .input-area input[type="number"],
+         #rrQuantum {
+            padding: 1.1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--input-bg); /* Input arka planı */
+            color: var(--text-color); /* Input yazı rengi */
+            font-size: 1em;
+             width: 100%;
+            box-sizing: border-box; /* Padding ve border genişliğe dahil */
+             /* Sayı inputundaki okları kaldır (farklı tarayıcılar için) */
+             -moz-appearance: textfield;
+        }
+          /* Sayı inputundaki okları kaldır (farklı tarayıcılar için) */
+        .input-area input::-webkit-outer-spin-button,
+        .input-area input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+
+
+        .input-area input[type="text"]:focus,
+        .input-area input[type="number"]:focus,
+        #rrQuantum:focus {
+            outline: none; /* Odaklanıldığında dış çerçeveyi kaldır */
+            border-color: var(--accent-blue); /* Mavi border */
+            box-shadow: var(--glow-subtle); /* Hafif parlama */
+        }
+
+        /* Buton Stilleri */
+        button {
+            padding: 1.1rem 2.5rem;
+            background-color: var(--accent-blue); /* Buton zemini mavi */
+            color: var(--header-bg); /* Buton yazı rengi koyu */
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.1s ease; /* Animasyonlar */
+            font-weight: bold;
+            text-transform: uppercase; /* Yazı büyük harf */
+             letter-spacing: 0.5px; /* Harf aralığı */
+             box-shadow: var(--glow-subtle); /* Hafif parlama */
+        }
+
+        button:hover {
+            background-color: #63a4ff; /* Hafif açık mavi hover */
+            box-shadow: 0 0 10px var(--accent-blue); /* Daha güçlü mavi parlama */
+            transform: translateY(-2px); /* Hafif yukarı kayma */
+        }
+
+        button:active {
+             background-color: #3f90f7; /* Tıklandığında daha koyu */
+             box-shadow: 0 0 5px var(--accent-blue);
+            transform: translateY(0); /* Eski yerine dönme */
+        }
+
+        button:disabled {
+            background-color: #455a64; /* Gri-mavi devre dışı */
+            color: #808080; /* Gri yazı */
+            cursor: not-allowed; /* İmleç değişir */
+            opacity: 0.7; /* Biraz şeffaf */
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* Eklenen İşlem Listesi Stilleri */
+        #processList {
+            margin-top: 3rem;
+             border-top: 1px solid var(--border-color);
+            padding-top: 2.5rem;
+        }
+
+         #processList ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+         }
+
+         #processList li {
+            background-color: #2a3a4b; /* Liste öğesi zemini */
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            display: flex; /* Yatay hizala */
+            justify-content: space-between; /* İçeriği iki yana yasla */
+            align-items: center; /* Dikey ortala */
+            border: 1px dashed var(--accent-purple);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+             font-size: 1.1em;
+         }
+
+          #processList li span {
+              flex-grow: 1; /* Ortadaki bilgi genişlesin */
+               margin-right: 1.5rem;
+                color: var(--text-color);
+          }
+          #processList li strong {
+              color: var(--header-text); /* İşlem adı Mint/Aqua */
+              text-shadow: var(--glow-subtle);
+          }
+
+         /* Sil butonu stili */
+         #processList li button {
+            padding: 0.5rem 1rem;
+            font-size: 0.9em;
+            background-color: var(--accent-red); /* Kırmızı */
+             color: white;
+            text-transform: none;
+            flex-shrink: 0; /* Daralmasın */
+             box-shadow: none;
+             transition: background-color 0.3s ease, box-shadow 0.3s ease;
+         }
+          #processList li button:hover {
+            background-color: #e53935; /* Daha koyu kırmızı */
+             box-shadow: 0 0 8px var(--accent-red); /* Kırmızı parlama */
+             color: white;
+             transform: none;
+         }
+
+
+        /* -- Sonuç Alanları Stilleri -- */
+        .results-container {
+             margin-top: 3rem;
+             padding-top: 2rem;
+        }
+
+         /* Her Algoritma Sonucunun İçine Koyulduğu Kutu */
+         .algorithm-result-block {
+             background: #213040; /* Biraz farklı koyu zemin */
+             padding: 2.5rem;
+             margin-bottom: 3rem;
+             border-radius: 10px;
+             border: 1px solid var(--border-color);
+             box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4); /* İç gölge */
+         }
+          /* Algoritma sonuç kutusu başlıkları */
+          .algorithm-result-block h3 {
+               margin-top: 0;
+               border-bottom-color: var(--accent-yellow); /* Sarı çizgi */
+               color: var(--header-text); /* Mint/Aqua */
+                text-shadow: 0 0 4px rgba(167, 255, 235, 0.6);
+          }
+
+
+        /* Tablo Stilleri */
+        table {
+            width: 100%;
+            border-collapse: collapse; /* Çift çizgileri kaldır */
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Gölge */
+        }
+
+        table th, table td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+             vertical-align: middle;
+        }
+
+        table th {
+            background-color: #263238; /* Başlık zemini */
+            color: var(--accent-blue); /* Başlık yazı mavi */
+            text-transform: uppercase;
+            font-weight: bold;
+            border-bottom: 2px solid var(--accent-blue); /* Mavi alt çizgi */
+            font-size: 1em;
+        }
+         /* İlk sütun (İşlem adı) genişliği */
+         table th:first-child,
+         table td:first-child {
+            width: 12%;
+         }
+
+        /* Tablo body satır stilleri */
+        table tbody tr:nth-child(even) {
+            background-color: #213040; /* Çift satır zemini */
+        }
+        table tbody tr:hover {
+            background-color: #304050; /* Hover zemini */
+             color: var(--header-text); /* Hover yazı rengi (daha belirgin) */
+        }
+         /* Normal hücre yazı rengi */
+         table td {
+             color: var(--text-color);
+         }
+
+
+        /* Ortalama Metrikler Tablosu Özel Stilleri */
+         table.average-table th {
+             background-color: var(--accent-purple); /* Başlık zemini mor */
+             color: var(--secondary-bg); /* Beyaz yazı */
+              border-bottom: 2px solid var(--accent-yellow); /* Sarı alt çizgi */
+              font-size: 1.1em;
+         }
+         table.average-table td {
+             font-weight: bold; /* Değerler bold */
+             color: var(--text-color); /* Yazı rengi normal */
+             font-size: 1.1em;
+         }
+
+         /* Minimum (En İyi) Metrik Vurgusu */
+         .min-metric {
+             font-weight: bold;
+             color: var(--accent-yellow); /* Sarı */
+             text-shadow: 0 0 6px rgba(255, 235, 59, 0.8); /* Sarı parlama */
+             background-color: rgba(255, 235, 59, 0.15); /* Hafif sarı yarı şeffaf zemin */
+         }
+
+
+        /* -- Gantt Şeması Stilleri -- */
+        .gantt-chart-container {
+            margin: 2.5rem 0;
+            padding: 1.8rem 0; /* İç boşluk */
+            background: #1a2636; /* Gantt alanı zemini */
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            position: relative;
+             box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3); /* İç gölge */
+        }
+
+         .gantt-chart-container h4 {
+             margin-top: 0;
+             padding-left: 1.8rem; /* Hizalama */
+             color: var(--accent-yellow); /* Gantt başlığı sarı */
+             margin-bottom: 1.8rem;
+             text-shadow: 0 0 6px rgba(255, 235, 59, 0.5);
+         }
+
+        /* Gantt Çubuklarını İçeren Kısım */
+        .gantt-chart {
+            position: relative;
+            width: max-content; /* İçeriğe (çubuklara) göre genişle */
+            height: 80px; /* Yükseklik */
+            overflow-x: auto; /* Yatay kaydırma çubuğu gerektiğinde çıkar */
+            white-space: nowrap; /* İç çubukların alt satıra inmesini engeller */
+            display: flex; /* Çubukları yan yana dizer */
+            align-items: center; /* Çubukları dikeyde ortala */
+            padding: 0 1rem; /* Sol/Sağ iç boşluk */
+            padding-bottom: 40px; /* Zaman işaretçileri için alt boşluk */
+        }
+
+        /* Tek Bir İşlem Bloğu Stili */
+        .process-block {
+            height: 60px;
+            text-align: center;
+            line-height: 60px;
+            color: #111; /* Blok içi yazı koyu */
+            font-size: 1em;
+            font-weight: bold;
+            border-right: 1px solid rgba(0, 0, 0, 0.3); /* Blok arası çizgi */
+            box-sizing: border-box; /* Padding ve border boyuta dahil */
+            position: relative;
+            flex-shrink: 0; /* Daraldığında küçülme */
+            min-width: 15px; /* En kısa süreler için min genişlik */
+             /* background-color JS tarafından verilecek */
+             box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2); /* Hafif blok gölgesi */
+             text-shadow: 0 0 2px rgba(255, 255, 255, 0.3); /* Blok içi yazıya parlama */
+        }
+
+         /* Tooltip Stili (gantt çubukları üzerine gelince detay gösterir) */
+         .process-block[title]:hover::after {
+              content: attr(title);
+              position: absolute;
+              bottom: 100%; /* Bloğun üzerine */
+              left: 50%;
+              transform: translateX(-50%);
+              background-color: rgba(30, 40, 50, 0.95);
+              color: var(--text-color);
+              padding: 6px 12px;
+              border-radius: 5px;
+              font-size: 0.85em;
+              white-space: nowrap;
+              z-index: 100;
+              margin-bottom: 8px;
+              border: 1px solid var(--border-color);
+              box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+              pointer-events: none; /* İmleç olaylarını bloklamaz */
+          }
+
+
+        /* Zaman Çizgisi Stilleri */
+        .time-line {
+             position: absolute;
+             bottom: 30px; /* Blokların hemen altında */
+             left: 1rem; /* Padding ile hizalı */
+             right: 1rem; /* Padding ile hizalı */
+             height: 1px;
+             background-color: var(--accent-purple); /* Mor çizgi */
+             box-shadow: 0 0 5px rgba(179, 157, 219, 0.5); /* Mor parlama */
+        }
+
+        /* Zaman İşaretçileri Stilleri */
+        .time-mark {
+            position: absolute;
+            bottom: 5px; /* Zaman çizgisinin altına */
+            transform: translateX(-50%); /* Merkez noktasına hizala */
+            font-size: 0.8em;
+            color: var(--text-color); /* Yazı rengi açık */
+            z-index: 1; /* Çubukların üstünde görünür */
+            white-space: nowrap;
+            padding: 2px 6px;
+            background: var(--secondary-bg); /* Kendi arka plan zemini (okunurluk için) */
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+         /* İlk işaretçi (0) pozisyon düzeltmesi (sol kenarda olmalı) */
+         .gantt-chart > .time-mark:first-child {
+             transform: translateX(0); /* Kaydırma yapma */
+         }
+          /* Son işaretçi (max zaman) için isterseniz farklı bir hizalama yapabilirsiniz ama overflow: auto varken genellikle gerekli değil */
+
+
+        /* İşlem Bitiş Zamanı Etiketi Stili (blok içinde alt sağ) */
+        .process-block .time-end {
+            position: absolute;
+            bottom: -25px; /* Bloğun altına */
+            right: -0.6rem; /* Sağ kenarın dışına taşı */
+            font-size: 0.7em;
+            color: var(--text-color);
+             transform: translateX(50%); /* Tam bitiş noktasının altına */
+             padding: 3px 6px;
+             background: #213040; /* Koyuya yakın arka plan */
+             border-radius: 4px;
+             white-space: nowrap;
+             border: 1px solid var(--border-color);
+             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+
+        /* Not ve Hata Mesajı Stilleri */
+        .note {
+            font-size: 0.95em;
+            color: #b0bec5; /* Açık gri-mavi */
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: #1a2636; /* Arka plan */
+            border-left: 4px solid var(--accent-purple); /* Sol çizgi Mor */
+            border-radius: 6px;
+             box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.3); /* İç gölge */
+        }
+        .error {
+            color: var(--accent-red); /* Kırmızı */
+            font-weight: bold;
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: #3a1d20; /* Koyu kırmızı zemin */
+            border: 1px solid var(--accent-red);
+            border-radius: 6px;
+             box-shadow: 0 2px 8px rgba(255, 82, 82, 0.3);
+        }
+
+
+        /* Footer Stili */
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 3rem;
+            background: var(--header-bg); /* Footer arka planı başlıkla aynı */
+            color: var(--text-color); /* Açık yazı */
+            font-size: 0.9em;
+             border-top: 1px solid var(--accent-blue); /* Üst çizgi Mavi */
+        }
+
+        /* -- Responsive Ayarlar -- */
+        /* Farklı ekran boyutları için görünüm ayarları */
+        @media (max-width: 768px) {
+            header h1 { font-size: 2.2rem; }
+            header p { font-size: 1em; }
+            section { padding: 1.5rem; margin-bottom: 2rem; }
+            section::after { display: none; } /* Mobil'de dekoratif çizgiyi kaldır */
+             section h2 { font-size: 1.8em; margin-bottom: 1.5rem; }
+             h3 { font-size: 1.2em; margin-top: 2rem; }
+
+            .input-area { flex-direction: column; align-items: stretch; gap: 1.5rem; }
+            .input-group { min-width: auto; max-width: none; }
+            button { width: 100%; padding: 1rem 1.5rem; font-size: 1em;}
+
+             #processList li { padding: 1rem; font-size: 1em; }
+
+            table th, table td { padding: 10px 8px; font-size: 0.9em; }
+             table th:first-child, table td:first-child { width: 15%; } /* Mobil'de biraz daha fazla yer ver */
+
+             table.average-table th, table.average-table td { font-size: 1em; }
+
+            .gantt-chart { height: 60px; padding-bottom: 30px; }
+            .process-block { height: 40px; line-height: 40px; font-size: 0.85em; }
+            .time-line { bottom: 20px; }
+            .time-mark { bottom: 0px; font-size: 0.7em;}
+             .process-block .time-end { bottom: -20px; font-size: 0.6em; }
+
+            .note, .error { padding: 1rem; font-size: 0.85em; }
+        }
+        /* Çok küçük ekranlar için */
+         @media (max-width: 480px) {
+             header h1 { font-size: 1.8rem;}
+             header p { font-size: 0.9em;}
+             main { padding: 0 1rem;}
+             section { padding: 1rem; margin-bottom: 1.5rem;}
+              section h2 { font-size: 1.5em; margin-bottom: 1.2rem; }
+             h3 { font-size: 1.1em; margin-top: 1.5rem;}
+             .input-area { gap: 1rem; }
+
+              #processList li { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+             #processList li span { margin-right: 0; margin-bottom: 0.5rem; }
+
+             table th, table td { font-size: 0.8em; }
+              table th:first-child, table td:first-child { width: auto; } /* Çok daralınca genişlik otomatikleşsin */
+
+             .gantt-chart { padding-left: 0.5rem; padding-right: 0.5rem;}
+              .time-line { left: 0.5rem; right: 0.5rem; }
+               /* Zaman işaretçilerinin dar alanda üst üste gelmesini engellemek için kaydırma gerekebilir */
+               .time-mark { /* transform: translateX(-50%); default yeterli veya farklı denemeler gerekebilir */ }
+
+             .process-block .time-end { /* Bitiş zamanı etiketleri */
+                   bottom: -18px; /* Konumu ayarla */
+                  /* Sağdan dışarı taşmayı azalt */
+                   right: 0;
+                   transform: translateX(0%); /* Sağ kenara hizala */
+             }
+              /* Gantt çubuğu tooltipsiz daha iyi olabilir mobil'de */
+              .process-block[title]:hover::after { display: none;}
+         }
+
+
+    </style>
+    <!-- CSS Kodları Sonu -->
+
+</head>
+<body>
+
+    <header>
+        <h1>İşlemci Zamanlama Simülasyonu</h1>
+        <p>FCFS, SJF ve Round Robin Algoritmaları Karşılaştırması</p>
+    </header>
+
+    <main>
+        <!--
+        GİRİŞ BÖLÜMÜ: Simülasyonun amacını ve kullanılan algoritmaları kısaca açıklar.
+        Buradaki metinleri sunumunuzun giriş kısmında kullanabilirsiniz.
+        -->
+        <section id="introduction">
+            <h2>Giriş</h2>
+            <p>
+                Bu interaktif simülasyon, İşletim Sistemlerinde sıklıkla kullanılan temel işlemci zamanlama algoritmalarını görsel ve sayısal olarak karşılaştırmak için tasarlanmıştır. Kullanıcı tarafından belirlenen işlemlerin, <strong style="color:var(--accent-blue);">İlk Gelen İlk Çıkar (FCFS)</strong>, <strong style="color:var(--accent-blue);">En Kısa İş Önce (Kesmesiz SJF)</strong> ve <strong style="color:var(--accent-blue);">Round Robin (RR)</strong> algoritmaları altında nasıl çalıştığını ve performanslarını gösterir. Amacımız, bu algoritmaların farklı işlem yükleri üzerindeki davranışlarını ve sonuçlarını daha kolay anlaşılır kılmaktır.
+            </p>
+        </section>
+
+        <!--
+        İŞLEM GİRİŞ BÖLÜMÜ: Kullanıcının simülasyon için işlem tanımlamasını sağlar.
+        İşlem Adı, Varış Zamanı ve CPU Süresi gibi bilgiler bu form alanlarına girilir.
+        Eklenen işlemlerin listesi bu bölümde görünür ve silinebilir.
+        Round Robin zaman dilimi (quantum) de burada belirlenir.
+        -->
+        <section id="input-section">
+            <h2>İşlem Bilgilerini Girin</h2>
+
+            <div class="input-area">
+                 <div class="input-group">
+                    <label for="processID">İşlem Adı (Örn: P1)</label>
+                    <input type="text" id="processID" value="P" required>
+                 </div>
+                <div class="input-group">
+                    <label for="arrivalTime">Varış Zamanı</label>
+                    <input type="number" id="arrivalTime" value="0" min="0" required>
+                </div>
+                <div class="input-group">
+                    <label for="burstTime">CPU Süresi (Burst Time)</label>
+                    <input type="number" id="burstTime" value="5" min="1" required>
+                </div>
+                 <div>
+                    <button id="addProcessBtn">İşlemi Ekle</button>
+                 </div>
+            </div>
+
+             <div id="processList">
+                <h3>Eklenen İşlemler Listesi</h3>
+                 <p id="noProcessMessage">Henüz işlem eklenmedi. Lütfen yukarıdaki formdan işlem ekleyin.</p>
+                 <ul>
+                    <!-- Eklenen işlemler JS tarafından buraya "li" elementleri olarak eklenir -->
+                 </ul>
+             </div>
+
+            <div class="input-area" style="margin-top: 3rem; border-top: 1px dashed var(--border-color); padding-top: 2rem;">
+                 <div class="input-group">
+                     <label for="rrQuantum">Round Robin Zaman Dilimi (q)</label>
+                     <input type="number" id="rrQuantum" value="3" min="1">
+                 </div>
+                <div>
+                     <button id="runSimulationBtn">Simülasyonları Çalıştır</button>
+                </div>
+            </div>
+
+             <p class="note">Simülasyonu çalıştırmak için en az 1 işlem eklemelisiniz. İşlemlerinizi ekledikten ve Round Robin zaman dilimini belirledikten sonra "Simülasyonları Çalıştır" butonuna basın.</p>
+             <p id="error-message" class="error" style="display:none;"></p>
+
+
+        </section>
+
+        <!--
+        SONUÇ BÖLÜMÜ: Simülasyonlar çalıştıktan sonra elde edilen sonuçların görüntülendiği yer.
+        Her algoritmanın kendi Gantt şeması ve işlem bazlı metrik tablosu burada yer alır.
+        En altta ise algoritmaların genel performansını karşılaştıran bir özet tablo bulunur.
+        Başlangıçta gizlidir (style="display:none;"), simülasyon çalışınca JS tarafından görünür yapılır.
+        -->
+        <section id="simulation-results" style="display:none;">
+            <h2>Simülasyon Sonuçları ve Karşılaştırma</h2>
+
+             <!-- Her bir algoritmanın sonuçlarının (Gantt Şeması, İşlem Bazlı Metrikler) ayrı ayrı gösterildiği konteyner. JS tarafından doldurulur. -->
+             <div id="algorithmResultsDisplay"></div>
+
+
+             <!-- Tüm algoritmaların ortalama performans metriklerinin karşılaştırıldığı özet tablo. JS tarafından doldurulur. -->
+            <h3>Genel Performans Karşılaştırması (Ortalamalar)</h3>
+             <p>Farklı algoritmaların, belirtilen işlem setiniz için ortalama performans metrikleri karşılaştırması. Düşük değerler genellikle daha iyi performans anlamına gelir.</p>
+            <table class="average-table" id="averageMetricsTable">
+                <thead>
+                    <tr>
+                        <th>Algoritma</th>
+                        <th>Ort. Bekleme Süresi</th>
+                        <th>Ort. Dönüş Süresi</th>
+                        <th>Ort. Tepki Süresi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Ortalama metrik sonuçları JS tarafından buraya "tr" elementleri olarak eklenir -->
+                </tbody>
+            </table>
+
+             <p class="note">
+                <strong>Bekleme Süresi (Waiting Time):</strong> Bir işlemin çalışmaya hazır olduğu, ancak CPU'ya atanmayı beklediği toplam süre.<br>
+                <strong>Dönüş Süresi (Turnaround Time):</strong> Bir işlemin sisteme girdiği andan tamamen yürütülüp bittiği ana kadar geçen toplam süre (Bitirme Zamanı - Varış Zamanı).<br>
+                <strong>Tepki Süresi (Response Time):</strong> Bir işlemin sisteme girdiği (varış) andan ilk kez CPU'ya atandığı ana kadar geçen süre.<br>
+                 Metriklerdeki <strong class="min-metric" style="color:var(--accent-yellow); text-shadow:none; background-color:transparent; border:none; padding:0;">sarı renkli vurgu</strong>, o metrik için en düşük (genellikle en iyi) değeri belirtir.
+            </p>
+
+
+        </section>
+    </main>
+
+    <!--
+    FOOTER BÖLÜMÜ: Sayfa sonu bilgileri.
+    -->
+    <footer>
+        <p>© 2023 İşlemci Zamanlama Simülasyonu | Sunum İçin Hazırlanmıştır</p>
+    </footer>
+
+    <!--
+    ########################################################################
+    ##                                                                    ##
+    ##                        JAVASCRIPT KODLARI                          ##
+    ##                                                                    ##
+    ##        Bu bölüm, arayüzün etkileşimini ve simülasyon mantığını     ##
+    ##        gerçekleştiren kodları içerir. Sunumda bu bölümü anlatırken ##
+    ##        işlem girişinden simülasyonun nasıl çalıştığına, metrik     ##
+    ##        hesaplamalarına ve sonuçların nasıl gösterildiğine odaklanılır. ##
+    ##                                                                    ##
+    ########################################################################
+    -->
+    <script>
+        /*
+        JAVASCRIPT KODLARI: Arayüzü dinamik hale getirir ve simülasyonu çalıştırır.
+        1. Kullanıcı etkileşimlerini (buton tıklama, input değişimi) dinler.
+        2. İşlem bilgilerini alır, depolar ve listeler.
+        3. İşlem listesi üzerinden algoritmaları simüle eder.
+        4. Simülasyon sonuçlarını (Gantt, metrikler) hesaplar ve hazırlar.
+        5. Hesaplanan sonuçları HTML arayüzünde görüntüler.
+        */
+
+        // -- Değişken Tanımlamaları --
+        // Arayüzdeki elementlere ve simülasyon verisine ulaşmak için gerekli değişkenler.
+        let processes = []; // { id: string, arrivalTime: number, burstTime: number } yapısındaki objeleri tutan ana dizi. remainingTime algoritmaların kopyalarında yönetilecek.
+
+        // DOM Elementleri (Arayüzdeki etkileşimli kısımlara referanslar)
+        const addProcessBtn = document.getElementById('addProcessBtn');
+        const runSimulationBtn = document.getElementById('runSimulationBtn');
+        const processListUl = document.querySelector('#processList ul'); // Eklenen işlemlerin listesi
+        const noProcessMessage = document.getElementById('noProcessMessage'); // Liste boşken görünen mesaj
+        const resultSection = document.getElementById('simulation-results'); // Tüm sonuç bölümü
+        const algorithmResultsDisplay = document.getElementById('algorithmResultsDisplay'); // Tekil algoritma sonuçlarının ekleneceği div
+
+        // Input Alanları
+        const processIDInput = document.getElementById('processID');
+        const arrivalTimeInput = document.getElementById('arrivalTime');
+        const burstTimeInput = document.getElementById('burstTime');
+        const rrQuantumInput = document.getElementById('rrQuantum');
+
+        const errorMessage = document.getElementById('error-message'); // Hata mesajının gösterileceği p elementi
+        const averageMetricsTableBody = document.querySelector('#averageMetricsTable tbody'); // Ortalama metrikler tablosunun body'si
+
+
+         // Gantt Çubuğu Renk Paleti (CSS root değişkenleriyle aynı listeyi kullanıyoruz)
+         // İşlem ID'sine göre renk atamak için bir fonksiyon
+         const processColors = [
+             '#00f0b5', '#40c4ff', '#f50057', '#e040fb', '#ffc107', '#64dd17', '#ff8a80',
+             '#8c9eff', '#b2ff59', '#ffea00', '#f48fb1', '#a7ffeb', '#fbc02d', '#e57373' // Daha fazla renk eklendi
+         ];
+         function getProcessColor(processId) {
+             // İşlem ID'sini bir sayıya dönüştürüp (hash) renk dizisinin uzunluğuna göre mod alarak renk seçeriz.
+             // Bu sayede aynı ID'ye sahip işlemlere her zaman aynı renk atanır.
+             let hash = 0;
+             if (processId.length === 0) return processColors[0];
+             for (let i = 0; i < processId.length; i++) {
+                 const char = processId.charCodeAt(i);
+                 hash = ((hash << 5) - hash) + char; // Basit bir hashing
+                 hash = hash & hash; // 32-bit integer'a çevir
+             }
+             const index = Math.abs(hash) % processColors.length;
+             return processColors[index];
+         }
+
+
+        // -- Arayüz Güncelleme Fonksiyonları --
+
+        // Eklenen işlemler listesini HTML'de günceller.
+        function displayProcessList() {
+            processListUl.innerHTML = ''; // Mevcut liste içeriğini sil
+            if (processes.length === 0) {
+                // İşlem listesi boşsa mesajı göster, butonları devre dışı bırak
+                noProcessMessage.style.display = 'block';
+                runSimulationBtn.disabled = true;
+                 rrQuantumInput.disabled = true; // Quantum inputu da disable
+            } else {
+                // İşlem listesi doluysa mesajı gizle, butonları aktif hale getir
+                noProcessMessage.style.display = 'none';
+
+                // Kullanıcı arayüzünde listeyi Varış Zamanına göre sıralayarak göster (kod mantığını etkilemez, sadece görüntü)
+                 const sortedForDisplay = [...processes].sort((a, b) => {
+                     if (a.arrivalTime !== b.arrivalTime) return a.arrivalTime - b.arrivalTime;
+                     return a.id.localeCompare(b.id); // Varış aynı ise ID'ye göre sırala
+                 });
+
+                // Sıralanmış liste için her işlem için bir "li" (liste öğesi) oluştur ve listeye ekle
+                sortedForDisplay.forEach((p) => {
+                     // Sil butonunun doğru işlemi silebilmesi için orijinal processes dizisindeki indexi bul
+                     const originalIndex = processes.findIndex(proc =>
+                         proc.id === p.id && proc.arrivalTime === p.arrivalTime && proc.burstTime === p.burstTime
+                     );
+
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span><strong>${p.id}</strong> (Varış: ${p.arrivalTime}, Burst: ${p.burstTime})</span>
+                        <button data-index="${originalIndex}">Sil</button> <!-- Sil butonu ve orijinal indexi tutan data attribute -->
+                    `;
+                    processListUl.appendChild(li); // Oluşturulan li elementini ul elementine ekle
+                });
+            }
+             // Liste güncellendikten sonra simülasyon butonunun durumunu tekrar kontrol et
+             updateSimulationButtonState();
+        }
+
+        // Giriş alanlarındaki verileri alarak yeni bir işlemi "processes" dizisine ekler.
+        function addProcess() {
+            const id = processIDInput.value.trim() || `P${processes.length + 1}`; // ID girilmezse P1, P2... gibi varsayılan atama
+            const arrivalTime = parseInt(arrivalTimeInput.value);
+            const burstTime = parseInt(burstTimeInput.value);
+
+            // Input değerlerini doğrula (geçerli sayılar mı, sıfır veya negatif mi vs.)
+            if (isNaN(arrivalTime) || isNaN(burstTime) || arrivalTime < 0 || burstTime <= 0) {
+                showError("Lütfen geçerli Varış Zamanı (>=0) ve CPU Süresi (>0) girin.");
+                return; // Hata varsa işlemi ekleme, fonksiyonu sonlandır
+            }
+             // Aynı ID'ye sahip bir işlem zaten var mı diye kontrol et
+             if (processes.some(p => p.id === id)) {
+                 showError(`'${id}' işlem adı zaten mevcut. Lütfen farklı bir ad girin.`);
+                 return;
+             }
+
+            hideError(); // Eğer önceki bir hata mesajı varsa gizle
+            // İşlem objesini oluştur ve processes dizisine ekle. remainingTime simülasyon kopyalarında olacak.
+            processes.push({ id: id, arrivalTime: arrivalTime, burstTime: burstTime });
+
+            // Input alanlarını bir sonraki giriş için varsayılan değerlere sıfırla ve odağı ayarla
+            processIDInput.value = `P${processes.length + 1}`; // Sonraki işlem ID'si için öneri
+            // arrivalTimeInput.value = arrivalTime; // Opsiyonel: Son eklenen işlemin varışını koruyabilir veya 0 yapabilirsiniz.
+             burstTimeInput.value = '5'; // Burst Time'ı varsayılana çek
+             processIDInput.focus(); // İşlem Adı inputuna odaklan
+
+            displayProcessList(); // Ekrandaki işlem listesini güncelle
+
+             // Yeni bir işlem eklendiği için önceki simülasyon sonuçlarını temizle ve gizle
+             resultSection.style.display = 'none';
+              algorithmResultsDisplay.innerHTML = ''; // Algoritma sonuçları divini temizle
+              averageMetricsTableBody.innerHTML = ''; // Ortalama tabloyu temizle
+        }
+
+        // Bir işlemi processes dizisinden ve arayüzdeki listeden siler.
+        function removeProcess(index) {
+             // Silinecek indeksin geçerliliğini kontrol et
+             if (!isNaN(index) && index >= 0 && index < processes.length) {
+                 // Diziden ilgili indeksteki 1 elemanı sil
+                 processes.splice(index, 1);
+                 displayProcessList(); // Liste arayüzünü güncelle
+                  // İşlem silindiği için önceki simülasyon sonuçlarını temizle ve gizle
+                  resultSection.style.display = 'none';
+                   algorithmResultsDisplay.innerHTML = '';
+                  averageMetricsTableBody.innerHTML = '';
+             } else {
+                  console.error(`Geçersiz silme indeksi hatası: ${index}`);
+             }
+        }
+
+        // Belirtilen mesajla hata alanını görünür yapar.
+        function showError(message) {
+             errorMessage.textContent = message;
+             errorMessage.style.display = 'block';
+             updateSimulationButtonState(); // Hata görünüyorsa butonları disable yap
+        }
+
+        // Hata alanını gizler.
+        function hideError() {
+            errorMessage.style.display = 'none';
+             updateSimulationButtonState(); // Hata gizlendiyse (ve liste doluysa) butonları aktif yap
+        }
+
+         // Simülasyonu Çalıştır ve Round Robin Quantum inputunun durumunu (aktif/pasif) günceller.
+         function updateSimulationButtonState() {
+             // RR Quantum değeri geçerli mi diye kontrol et (sayı olmalı ve > 0 olmalı)
+             const quantumValue = parseInt(rrQuantumInput.value);
+              const isQuantumValid = !isNaN(quantumValue) && quantumValue > 0;
+
+             // Butonun disable olması için: İşlem listesi boşSA VEYA Hata mesajı görünürSE VEYA RR Quantum geçerli DEĞİLSE (Eğer işlemler eklendiyse)
+             if (processes.length === 0 || errorMessage.style.display !== 'none' || (processes.length > 0 && !isQuantumValid) ) {
+                  runSimulationBtn.disabled = true;
+             } else {
+                  runSimulationBtn.disabled = false; // Aksi halde aktif
+             }
+              // Quantum inputu sadece işlem listesi boşsa veya hata görünürse disable olur
+             rrQuantumInput.disabled = processes.length === 0 || errorMessage.style.display !== 'none';
+
+             // Hata mesajı Quantum ile ilgiliyse (sadece Quantum geçersizse), bu durumda "runSimulationBtn" zaten disable olmuş olur.
+             // Kullanıcı hata varken Run butonuna tıklayamaz.
+         }
+
+
+         // -- Yardımcı Simülasyon Hesaplama Fonksiyonları --
+
+         // Verilen Gantt verisindeki tüm eşsiz zaman noktalarını (başlangıç ve bitiş) bulur, sıralar ve dizi olarak döner.
+         // Gantt şeması üzerindeki zaman işaretlerini koymak için kullanılır.
+         function getUniqueTimelinePoints(ganttData) {
+             const points = new Set([0]); // Başlangıç noktası 0'ı ekle
+             ganttData.forEach(block => {
+                 if (block.id !== 'Idle' && block.start !== undefined && block.end !== undefined) {
+                      points.add(block.start); // İşlem bloklarının başlangıç zamanlarını ekle
+                      points.add(block.end);   // İşlem bloklarının bitiş zamanlarını ekle
+                 }
+             });
+             // Set'ten diziye çevir ve sayısal olarak sırala
+             return Array.from(points).sort((a, b) => a - b);
+         }
+
+         // Verilen orijinal işlem listesi ve Gantt verisini kullanarak performans metriklerini (Bekleme, Dönüş, Tepki) hesaplar.
+         function calculateMetrics(originalProcesses, ganttData) {
+             const completionTimes = {}; // Her işlemin nihai bitiş zamanını tutar
+             const firstStartTime = {}; // Her işlemin CPU'yu ilk aldığı zamanı tutar
+             const processMetrics = {}; // Her işlem için hesaplanan bireysel metrikler
+
+             // Gantt data'sını gezerek tamamlanma ve ilk başlama zamanlarını bul
+             ganttData.forEach(block => {
+                 if (block.id !== 'Idle') {
+                     completionTimes[block.id] = block.end; // Her block'un bitişi completionTime olabilir, döngü sonunda en son bitiş doğru olacaktır.
+                     if (!firstStartTime.hasOwnProperty(block.id)) {
+                         firstStartTime[block.id] = block.start; // Eğer bu işlemID'si daha önce görülmediyse, bu onun ilk başlama zamanıdır.
+                     }
+                 }
+             });
+
+             let totalWaitingTime = 0;
+             let totalTurnaroundTime = 0;
+             let totalResponseTime = 0;
+             // Tamamlanan işlem sayısına gerek yok ortalama hesaplarken tüm prosses sayısına böleceğiz
+
+
+             // Her orijinal işlem için metrikleri hesapla
+             originalProcesses.forEach(p => {
+                 const completionTime = completionTimes[p.id]; // Nihai bitiş zamanı
+                 const arrivalTime = p.arrivalTime; // Varış zamanı
+                 const burstTime = p.burstTime; // Toplam CPU ihtiyacı
+                 const firstStart = firstStartTime[p.id]; // İlk başlama zamanı (undefined olabilir eğer hiç çalışmadıysa)
+
+                 // Sadece simülasyonda gerçekten bitmiş işlemleri dahil et (completionTime tanımsız değilse)
+                 if (completionTime !== undefined && !isNaN(completionTime)) {
+                     const turnaroundTime = completionTime - arrivalTime;
+                     const waitingTime = turnaroundTime - burstTime; // Dönüş = Bekleme + Burst. Bekleme = Dönüş - Burst.
+                     const responseTime = (firstStart !== undefined && !isNaN(firstStart)) ? firstStart - arrivalTime : 0; // İlk çalışma anı - varış anı. Başlamadıysa Response = 0 kabul edilebilir.
+
+                     processMetrics[p.id] = {
+                         waitingTime: waitingTime,
+                         turnaroundTime: turnaroundTime,
+                         responseTime: responseTime,
+                         firstStartTime: firstStart,
+                         completionTime: completionTime
+                     };
+
+                     totalWaitingTime += waitingTime;
+                     totalTurnaroundTime += turnaroundTime;
+                     totalResponseTime += responseTime;
+                 } else {
+                      // Eğer işlem simülasyonda bitmediyse, metrikleri tanımsız yap.
+                      processMetrics[p.id] = {
+                          waitingTime: NaN, turnaroundTime: NaN, responseTime: NaN,
+                          firstStartTime: NaN, completionTime: NaN
+                      };
+                 }
+             });
+
+              const numProcesses = originalProcesses.length;
+              // Ortalama metrikleri hesapla (Toplamları proses sayısına böl)
+              const avgWaitingTime = numProcesses > 0 ? totalWaitingTime / numProcesses : 0;
+              const avgTurnaroundTime = numProcesses > 0 ? totalTurnaroundTime / numProcesses : 0;
+              const avgResponseTime = numProcesses > 0 ? totalResponseTime / numProcesses : 0;
+
+            return {
+                 processMetrics: processMetrics, // İşlem bazlı metrikler
+                 averageWaitingTime: avgWaitingTime, // Ortalama bekleme
+                 averageTurnaroundTime: avgTurnaroundTime, // Ortalama dönüş
+                 averageResponseTime: avgResponseTime // Ortalama tepki
+            };
+        }
+
+        // -- Algoritma Simülasyon Fonksiyonları --
+        // Her fonksiyon belirli bir zamanlama algoritmasını simüle eder ve Gantt verisi ile metrikleri hesaplar.
+
+        // FCFS (First Come, First Served): En basit algoritma, gelen sıraya göre işler çalışır.
+        function runFCFS(processes) {
+             // Orijinal process dizisini bozmamak için kopyasını al ve varış zamanına göre sırala
+            const sortedProcesses = [...processes].sort((a, b) => a.arrivalTime - b.arrivalTime);
+            const ganttData = []; // Çalışma zaman dilimlerini kaydeder { id, start, end, duration }
+            let currentTime = 0; // Simülasyonun geçerli zamanı
+
+            // Sıraya konmuş her işlem için
+            sortedProcesses.forEach(p => {
+                // Eğer geçerli zaman, işlemin varış zamanından küçükse, CPU o süre boyunca boştadır (idle time)
+                // const idleTime = Math.max(0, p.arrivalTime - currentTime); // Idle time'ı hesapla
+                // if (idleTime > 0) {
+                //    currentTime += idleTime; // Idle süresi kadar zamanı ilerlet (idle blok çizmek opsiyonel)
+                // }
+
+                // İşlemin başlangıç zamanı: ya mevcut zaman (eğer CPU boşta değilse veya işlem tam zamanında geldiyse)
+                // ya da işlemin varış zamanı (eğer CPU boşta kaldı ve işlem beklediyse). Math.max ile bulunur.
+                const startTime = Math.max(currentTime, p.arrivalTime);
+                const duration = p.burstTime; // İşlemin tüm CPU süresi
+                const completionTime = startTime + duration; // İşlemin bitiş zamanı
+
+                // Gantt data'ya bu çalışma bloğunu ekle
+                ganttData.push({
+                    id: p.id, // İşlem ID'si
+                    start: startTime, // Başlangıç zamanı
+                    end: completionTime, // Bitiş zamanı
+                    duration: duration // Süre
+                });
+
+                currentTime = completionTime; // Simülasyon zamanını bu işlemin bitiş anına güncelle
+            });
+
+             // Simülasyon bittikten sonra metrikleri hesapla ve tüm sonuçlarla birlikte dön
+             return { ganttData, ...calculateMetrics(processes, ganttData) };
+        }
+
+        // SJF (Non-Preemptive) - Kesmesiz En Kısa İş Önce: Hazır kuyruğundaki en kısa Burst Time'a sahip işlem bitene kadar çalışır.
+         function runSJF_NonPreemptive(processes) {
+             // İşlemlerin kopyasını al ve remainingTime ekle (SJF NP'de başlangıçta burst time = remainingTime olur)
+             const processesCopy = JSON.parse(JSON.stringify(processes));
+
+             let currentTime = 0;
+             const ganttData = [];
+             const readyQueue = []; // CPU'ya atanmaya hazır işlemleri (process objeleri) tutar
+
+            // İşlemleri varış zamanına göre sıralı bir kuyruğa al (Yeni gelenleri takip için)
+             const arrivalQueue = [...processesCopy].sort((a, b) => a.arrivalTime - b.arrivalTime);
+             let arrivalIndex = 0; // arrivalQueue'daki pozisyonu takip indexi
+
+             // Simülasyon döngüsü: Tüm işlemler bitene kadar veya başka yapılabilecek iş kalmayana kadar devam eder.
+             while (true) {
+                 // A: Yeni Varanları Kontrol Et ve Hazır Kuyruğuna Ekle
+                 // Mevcut zamana (currentTime) kadar gelen tüm işlemleri arrivalQueue'dan alıp readyQueue'ya ekle
+                 while(arrivalIndex < arrivalQueue.length && arrivalQueue[arrivalIndex].arrivalTime <= currentTime) {
+                     const process = arrivalQueue[arrivalIndex];
+                      // Hazır kuyrukta bu işlem zaten varsa (RR'da olabilir, SJF NP'de olmamalı) veya bittiyse tekrar eklemeyi engellemek gerekebilir.
+                      // SJF NP'de iş başlayınca bittiği için duplicate olmaz.
+                       if (!readyQueue.some(p => p.id === process.id)) { // Sadece henüz kuyrukta olmayanları ekle (güvenlik)
+                            readyQueue.push(process);
+                       }
+                       arrivalIndex++; // Sonraki işleme geç arrivalQueue'da
+                 }
+
+                 // B: Durdurma Koşulu - Eğer Hazır Kuyruğu Boşsa
+                 if (readyQueue.length === 0) {
+                      // Ve gelecek başka işlem de yoksa (arrivalQueue'daki tüm işlemler işlenmişse) -> Simülasyon bitti
+                      if (arrivalIndex >= arrivalQueue.length) break; // Tüm işlemler bitti döngüden çık.
+
+                       // Yoksa, kuyruk boş ama gelecek işlem VAR. CPU boştadır.
+                       // Simülasyon zamanını bir sonraki işlemin varış zamanına atla (Idle süresi oluştu)
+                       const nextArrivalTime = arrivalQueue[arrivalIndex].arrivalTime;
+                        // CPU en erken bir sonraki iş geldiğinde çalışabilir.
+                        if (nextArrivalTime > currentTime) { // Sadece ileri zıpla (geri zıplama olmamalı)
+                           currentTime = nextArrivalTime;
+                           continue; // Zamanı atladık. Döngünün başına dönerek yeni varışları ekle.
+                        } else { // Edge case: next arrival is at or before currentTime. Already added in while loop.
+                           // If ready queue is somehow still empty despite this, advance time unit by unit.
+                           currentTime++; continue; // Küçük bir adım atla ve tekrar dene (güvenlik)
+                        }
+                 }
+
+                // C: Hazır Kuyruğu Boş Değilse - CPU'ya İş Seç ve Çalıştır
+                // Hazır kuyruğundan SJF kuralına göre en uygun işlemi seç
+                // Kesmesiz SJF: Hazır kuyruğundaki "Burst Time"ı (başlangıç süresi) EN KISA olan işi seç.
+                // Burst Time eşitse, Tie-breaking kuralı (örn: FCFS - varış zamanı erken olan)
+                readyQueue.sort((a, b) => {
+                     // Önce burstTime'a göre küçükten büyüğe sırala
+                     if (a.burstTime !== b.burstTime) {
+                        return a.burstTime - b.burstTime;
+                    }
+                    // Burst Time eşitse: Varış Zamanına göre küçükten büyüğe sırala (FCFS kuralı)
+                    return a.arrivalTime - b.arrivalTime;
+                    // Alternatif Tie-breaking: return a.id.localeCompare(b.id); // veya ID'ye göre alfabetik
+                });
+
+                const processToRun = readyQueue.shift(); // Seçilen (kuyruk başı) işlemi kuyruktan çıkar
+
+                const startTime = currentTime; // İşlemin çalışmaya başladığı an = geçerli simülasyon zamanı
+                const duration = processToRun.burstTime; // Kesilmeyeceği için tüm Burst Time'ı çalışacak
+                const completionTime = currentTime + duration; // İşlemin bitiş zamanı
+
+                // Bu çalışma dilimini Gantt verisine kaydet
+                ganttData.push({
+                    id: processToRun.id,
+                    start: startTime,
+                    end: completionTime,
+                    duration: duration
+                });
+
+                currentTime = completionTime; // Simülasyon zamanını işlemin bittiği an'a ilerlet
+
+                 // D: İşlem Bittiğinde Veya Kesildiğinde (SJF NP'de kesilmez, bu adım daha çok RR için önemli ama genel yapı)
+                 // İşlem SJF NP'de bittiği için remainingTime'ı 0'a ulaşmıştır. Tekrar kuyruğa dönmesine gerek yok.
+                 // Döngünün başında (A) yeni varanları kontrol etme adımı tamamlanma zamanı >= varış zamanı olanları yakalar.
+
+
+            } // while(true) döngüsü biter
+
+             // Metrikleri hesapla ve dön
+             return { ganttData, ...calculateMetrics(processes, ganttData) };
+         }
+
+        // Round Robin (RR): Her işleme belirli bir "zaman dilimi (quantum)" boyunca CPU hakkı verir. Dilim bitmeden iş bitmezse, iş kesilir ve hazır kuyruğunun sonuna konur.
+        function runRoundRobin(processes, quantum) {
+             // İşlemlerin kopyasını al. remainingTime RR için kritiktir.
+             const processesCopy = JSON.parse(JSON.stringify(processes));
+             processesCopy.forEach(p => p.remainingTime = p.burstTime); // Başlangıçta kalan süre = Burst Time
+
+             let currentTime = 0; // Simülasyonun geçerli zamanı
+             const ganttData = [];
+             const readyQueue = []; // CPU'ya atanmaya hazır işlemleri (process objeleri) tutar (Queue veri yapısı gibi davranır)
+
+            // İşlemleri varış zamanına göre sıralı tut ki kolayca "yeni gelen" işlemleri bulabilelim ve FCFS benzeri kuyruk başı önceliğini yönetebilelim
+            const arrivalQueue = [...processesCopy].sort((a, b) => a.arrivalTime - b.arrivalTime);
+            let arrivalIndex = 0; // arrivalQueue'daki pozisyonu takip indexi
+
+             // Başlangıçta (t=0'da veya simülasyon başladığında) varış yapan tüm işlemleri hazır kuyruğuna ekle
+             while(arrivalIndex < arrivalQueue.length && arrivalQueue[arrivalIndex].arrivalTime <= currentTime) {
+                 readyQueue.push(arrivalQueue[arrivalIndex]);
+                 arrivalIndex++; // İşlemi ekledik, bir sonrakine bak
+             }
+
+
+             // Simülasyon döngüsü
+             while (true) {
+                 // A: Durdurma Koşulu - Eğer Hazır Kuyruğu Boşsa
+                 if (readyQueue.length === 0) {
+                     // VE arrivalQueue'da da iş kalmadıysa (gelmiş veya gelecek hiç işlem yoksa) -> Simülasyon bitti
+                     if (arrivalIndex >= arrivalQueue.length) break; // Tüm işlemler işlendi (arrivalQueue bitti), readyQueue da boş => tüm işler bitti.
+
+                     // Eğer hazır kuyruk boş AMA arrivalQueue'da bekleyen (gelecek) işlemler VARSA:
+                     // CPU boştadır. Simülasyon zamanını bir sonraki işlemin varış zamanına atla (Idle time)
+                      const nextArrivalTime = arrivalQueue[arrivalIndex].arrivalTime;
+                       // currentTime, bir sonraki işlem gelene kadar ileri zıplar. (Max kullanmak gerekli çünkü atlama bazen zamanı geri düşürebilir hatalı mantıkta, güvence için max)
+                      currentTime = Math.max(currentTime, nextArrivalTime);
+                      // Zaman atladık. Döngü başına dönerek, atlanan süre zarfında yeni varışları kuyruğa ekle.
+                       continue;
+                 }
+
+                // C: Hazır Kuyruğu Boş Değilse - CPU'ya İş Seç ve Çalıştır
+                // Round Robin: Hazır kuyruğunun en başındaki işlemi seç. (Queue'dan 'shift' metodu ile çıkarılır)
+                const processToRun = readyQueue.shift(); // Kuyruğun başındaki işlemi al ve kuyruktan çıkar.
+
+                const startTime = currentTime; // İşlemin bu zaman diliminde çalışmaya başladığı an
+                // Çalışacağı süre (timeSlice): quantum süresi İLE kalan sürenin (remainingTime) kısa olanı
+                const timeSlice = Math.min(quantum, processToRun.remainingTime);
+                const endTime = currentTime + timeSlice; // Bu zaman diliminin bitiş anı
+
+                // Bu çalışma dilimini (block) Gantt verisine ekle
+                ganttData.push({
+                    id: processToRun.id, // İşlem ID'si
+                    start: startTime, // Başlangıç
+                    end: endTime, // Bitiş
+                    duration: timeSlice // Ne kadar süre çalıştı
+                });
+
+                processToRun.remainingTime -= timeSlice; // İşlemin kalan süresini azalt
+                currentTime = endTime; // Simülasyon zamanını bu zaman diliminin bittiği an'a güncelle
+
+                // !!! D: YENİ VARANLARI KUYRUĞA EKLE (ÖNEMLİ NOKTA) !!!
+                // İşlem "timeSlice" süresi boyunca çalışırken, bu zaman aralığında (eski currentTime ile yeni currentTime=endTime arasında)
+                // sisteme yeni varmış OLABİLECEK işlemleri kontrol et.
+                // Yeni varan işlemleri arrivalQueue'dan alıp readyQueue'ya ekle.
+                 // Önemli: Bu adım, çalışan işlem (eğer bitmediyse) tekrar kuyruğa konmadan ÖNCE yapılmalıdır. RR'da adillik gereği yeni gelenler kuyrukta arkaya geçer.
+                 while(arrivalIndex < arrivalQueue.length && arrivalQueue[arrivalIndex].arrivalTime <= currentTime) {
+                     readyQueue.push(arrivalQueue[arrivalIndex]);
+                     arrivalIndex++; // İşlemi ekledik, bir sonrakine bak
+                 }
+
+                // E: İşlem Bitti mi Veya Kesildi mi? Geri Kuyruğa Dönüş Kontrolü.
+                // İşlem bu zaman diliminde tamamen bitti mi? (kalan süresi 0 oldu mu?)
+                if (processToRun.remainingTime > 0) {
+                    // Eğer bitmediyse, işlemin tamamı henüz bitmemiş demektir.
+                    // İşlemi hazır kuyruğunun SONUNA geri koy.
+                    readyQueue.push(processToRun);
+                } else {
+                   // İşlem tamamen bitti. Artık kalan süresi 0. Kuyruğa geri dönmesine gerek yok.
+                   // İşlemin tamamlandığı bilgisi ve nihai bitiş zamanı Gantt data'dan extract edilebilir metrik hesaplarken.
+                }
+
+                // Genel Güvenli Çıkış Kontrolü: Eğer readyQueue boşsa ve gelecek işlem kalmadıysa, tüm işler bitmiş demektir.
+                // Bu, en üstteki A maddesindeki 'break' ile halledilmektedir.
+
+
+            } // while(true) döngüsü biter
+
+             // Simülasyon bittikten sonra metrikleri hesapla ve tüm sonuçlarla birlikte dön
+            return { ganttData, ...calculateMetrics(processes, ganttData) };
+        }
+
+
+        // -- Sonuçları Arayüzde Görüntüleme Fonksiyonu --
+
+        // Bir algoritmanın simülasyon sonuçlarını (Gantt ve Tablolar) HTML arayüzünde görüntüler.
+        function displayResults(algorithmName, results) {
+             // Bu algoritmaya ait tüm sonuçları tutacak yeni bir div elementi oluştur ve genel sonuç alanına ekle
+             const algoResultDiv = document.createElement('div');
+             algoResultDiv.classList.add('algorithm-result-block'); // CSS stili için class ekle
+             algorithmResultsDisplay.appendChild(algoResultDiv); // Oluşturulan div'i results alanına ekle
+
+             // Sonuçlar geçerli mi diye basit bir kontrol yap (boş data veya sadece Idle bloklar olabilir hatayla)
+             if (!results || !results.ganttData || results.ganttData.length === 0 || results.ganttData.every(b => b.id === 'Idle')) {
+                 // Eğer sonuç geçerli değilse bir hata mesajı gösteren HTML oluştur
+                 algoResultDiv.innerHTML += `<h3>${algorithmName} Sonuçları</h3><p class="error">Simülasyon bu algoritma için bir sonuç üretemedi veya hiç işlem çalışmadı. Lütfen inputları ve Round Robin zaman dilimini kontrol edin.</p>`;
+                 return null; // Başarısız olursa null dön ki ortalama hesaplarına katılmasın
+             }
+
+             // Gantt data'dan tüm benzersiz zaman noktalarını bul (başlangıçlar, bitişler, 0)
+             const uniqueTimes = getUniqueTimelinePoints(results.ganttData);
+
+            // Bu algoritma için HTML içeriğini oluşturmaya başla
+            let resultHTML = `<h3>${algorithmName}</h3>`; // Algoritma başlığı (H3)
+
+            // --- Gantt Şeması HTML ---
+            resultHTML += `
+                <div class="gantt-chart-container">
+                    <h4>Gantt Şeması</h4>
+                    <div class="gantt-chart"> <!-- Yatay kaydırılabilir alan -->
+            `;
+            // Her bir işlem bloğunu Gantt şemasına ekle (Gantt data'dan gelen her { id, start, end, duration })
+            results.ganttData.forEach(block => {
+                 if (block.id !== 'Idle') { // "Idle" (boşta) bloklarını Gantt şemasında ayrıca çizmeyi şimdilik atlıyoruz, zaman işaretçileri boşluğu belirtir.
+                     // Blok süresi: blok.duration (Round Robin'de timeSlice olabilir)
+                     const blockDuration = block.duration;
+                     // İşlem ID'sine göre renk seç (getProcessColor fonksiyonu ile)
+                     const blockColor = getProcessColor(block.id);
+
+                     // Her Gantt çubuğu için bir div element oluştur. Stil ve başlık ekle.
+                     resultHTML += `
+                        <div class="process-block"
+                             style="background-color: ${blockColor};
+                                    width: calc(${blockDuration} * var(--gantt-scale));"
+                             title="${block.id} (Başlangıç: ${block.start}, Bitiş: ${block.end}, Süre: ${block.duration})"> <!-- Fare üzerine gelince görünen Tooltip bilgisi -->
+                            ${block.id} <!-- Blok içine işlem adı -->
+                             <span class="time-end">${block.end}</span> <!-- Bloğun bitiş zamanı etiketi -->
+                        </div>
+                    `;
+                 }
+            });
+
+            // Zaman çizelgesi ana çizgisi
+            resultHTML += `<div class="time-line"></div>`;
+
+            // Zaman İşaretçileri (uniqueTimes'dan gelen her bir zaman noktası için)
+             uniqueTimes.forEach(time => {
+                  // İşaretçinin pozisyonunu hesapla: padding + zaman değeri * ölçek faktörü
+                  // Örneğin: 0. zaman -> left: calc(1rem + 0 * 15px) = 1rem
+                  //          5. zaman -> left: calc(1rem + 5 * 15px) = 1rem + 75px
+                  resultHTML += `
+                    <span class="time-mark"
+                          style="left: calc(1rem + ${time} * var(--gantt-scale));">
+                        ${time} <!-- Zaman değeri (0, 3, 5, 8, vs.) -->
+                    </span>
+                 `;
+             });
+
+            resultHTML += `
+                     </div> <!-- .gantt-chart kapanışı -->
+                </div> <!-- .gantt-chart-container kapanışı -->
+            `;
+
+            // --- İşlem Bazlı Metrikler Tablosu HTML ---
+            resultHTML += `
+                <h4>Performans Metrikleri (İşlem Bazlı Detaylar)</h4>
+                <table>
+                    <thead>
+                        <tr> <!-- Tablo Başlık Satırı -->
+                            <th>İşlem</th>
+                            <th>Varış</th>
+                            <th>Burst</th>
+                             <th>İlk Başlama</th>
+                            <th>Tamamlanma</th>
+                            <th>Bekleme</th>
+                            <th>Dönüş</th>
+                            <th>Tepki</th>
+                        </tr>
+                    </thead>
+                    <tbody> <!-- Tablo Veri Alanı -->
+            `;
+
+            // Metrik hesaplama fonksiyonundan dönen işlem bazlı metrik objesini al
+             const metricsMap = results.processMetrics;
+             // Orijinal işlem listesini ID'ye göre sıralayarak her satırı oluştur (tablo tutarlılığı için)
+             [...processes].sort((a, b) => a.id.localeCompare(b.id)).forEach(p => {
+                 const metrics = metricsMap[p.id] || {}; // Eğer bu işlem için metrik bulunamadıysa (örn: simülasyon bitmedi) boş obje kullan
+
+
+                 // Metrik değerlerini al, eğer tanımsızsa (NaN) "-" göster, sayılar için virgülden sonra 2 hane ayarla.
+                 const firstStart = (metrics.firstStartTime !== undefined && !isNaN(metrics.firstStartTime)) ? metrics.firstStartTime : '-';
+                 const completion = (metrics.completionTime !== undefined && !isNaN(metrics.completionTime)) ? metrics.completionTime : '-';
+                 const waiting = (metrics.waitingTime !== undefined && !isNaN(metrics.waitingTime)) ? metrics.waitingTime.toFixed(2) : '-';
+                 const turnaround = (metrics.turnaroundTime !== undefined && !isNaN(metrics.turnaroundTime)) ? metrics.turnaroundTime.toFixed(2) : '-';
+                 const response = (metrics.responseTime !== undefined && !isNaN(metrics.responseTime)) ? metrics.responseTime.toFixed(2) : '-';
+
+                // Tabloya yeni satır ekle
+                resultHTML += `
+                    <tr>
+                        <td>${p.id}</td>
+                        <td>${p.arrivalTime}</td>
+                         <td>${p.burstTime}</td>
+                         <td>${firstStart}</td>
+                         <td>${completion}</td>
+                        <td>${waiting}</td>
+                        <td>${turnaround}</td>
+                        <td>${response}</td>
+                    </tr>
+                `;
+            });
+
+            resultHTML += `
+                    </tbody> <!-- Tablo body kapanışı -->
+                </table> <!-- Tablo kapanışı -->
+            `;
+
+            // Oluşturulan tüm HTML içeriğini algoritmaya ait sonuç div'ine (algoResultDiv) yerleştir
+            algoResultDiv.innerHTML = resultHTML;
+
+            // Bu algoritmanın ortalama metriklerini bir obje olarak dön
+            // Bu obje, Genel Karşılaştırma Tablosunu doldurmak için "averageResults" dizisine eklenecek.
+             return {
+                 name: algorithmName, // Algoritma adı (örn: FCFS, SJF (Kesmesiz), Round Robin (q=3))
+                 averageWaitingTime: results.averageWaitingTime, // Hesaplanan ortalama Bekleme
+                 averageTurnaroundTime: results.averageTurnaroundTime, // Hesaplanan ortalama Dönüş
+                 averageResponseTime: results.averageResponseTime // Hesaplanan ortalama Tepki
+             };
+        }
+
+         // -- Genel Karşılaştırma Metriklerini Vurgulama Fonksiyonu --
+
+         // Ortalama metrikler tablosunda (averageMetricsTable), her bir metrik türü için (Bekleme, Dönüş, Tepki)
+         // algoritmalar arasındaki EN DÜŞÜK (genellikle en iyi) değeri bulan hücreyi vurgular.
+         function highlightMinMetrics(averageResults) {
+             if (!averageResults || averageResults.length === 0) return; // Eğer hiç ortalama sonuç yoksa bir şey yapma
+
+             // Vurgulanacak metriklerin isimleri ve karşılık gelen sütun indexleri (Ortalama Tabloda)
+             const metricsToHighlight = ['averageWaitingTime', 'averageTurnaroundTime', 'averageResponseTime'];
+             const colIndices = { // averageMetricsTable HTML'deki sütun indexleri (0=Alg. Adı, 1=Bekleme, 2=Dönüş, 3=Tepki)
+                 averageWaitingTime: 1,
+                 averageTurnaroundTime: 2,
+                 averageResponseTime: 3
+             };
+
+             // Vurgulanacak her metrik türü için
+             metricsToHighlight.forEach(metricKey => {
+                 let minMetric = Infinity; // Minimum değeri takip etmek için başlangıç değeri (sonsuz)
+                 let minRowIndices = []; // Bu minimum değere sahip olabilecek tüm satırların indexleri
+
+                 // averageResults dizisindeki (Her algoritmanın ortalamaları) her sonuca (algoritma) bak
+                 averageResults.forEach((result, index) => {
+                      const value = result[metricKey]; // İlgili metrik değeri (örn: fcfsAverage.averageWaitingTime)
+
+                      // Eğer değer bir sayı ise (NaN veya undefined değilse) ve sonlusa (Infinity değil)
+                      if (typeof value === 'number' && !isNaN(value) && isFinite(value)) {
+                           // Bu değer şu anki minimumdan küçükse
+                           if (value < minMetric) {
+                              minMetric = value; // Minimum değeri güncelle
+                              minRowIndices = [index]; // Yeni minimum bulduğunda, listeyi sıfırla ve bu satırın indexini ekle
+                           } else if (value === minMetric) {
+                              // Eğer bu değer şu anki minimum değere EŞİTSE, bu satırın indexini de listeye ekle
+                              minRowIndices.push(index);
+                           }
+                      }
+                 });
+
+                 // Minimum değere sahip tüm hücreleri bulduktan sonra CSS class'ını (min-metric) ekleyerek vurgula
+                 if (minRowIndices.length > 0 && minMetric !== Infinity) { // Eğer gerçekten bir minimum değer bulunduysa
+                     minRowIndices.forEach(rowIndex => {
+                          // Ortalama Tablosunun body'sinden ilgili satırı al
+                          const row = averageMetricsTableBody.rows[rowIndex];
+                           if (row) { // Satır elementi varsa
+                                const cellIndex = colIndices[metricKey]; // Hangi sütunu vurgulayacağımızı belirle
+                                 // İlgili hücre varsa, min-metric class'ını ekle
+                                 if (cellIndex !== undefined && row.cells.length > cellIndex) {
+                                    row.cells[cellIndex].classList.add('min-metric');
+                                 }
+                           }
+                     });
+                 }
+             });
+         }
+
+
+        // -- Ana Simülasyon Akışı --
+
+        // Tüm algoritmalar için simülasyonları sırayla çalıştırır ve sonuçları ekranda gösterir.
+        function runAllSimulations() {
+             // Simülasyon başlamadan önce işlem listesi boşsa uyarı ver
+             if (processes.length === 0) {
+                showError("Lütfen simülasyonu çalıştırmak için en az bir işlem ekleyin.");
+                return; // Simülasyonu çalıştırma, buradan çık
+             }
+
+             // Round Robin Quantum değerini doğrula (Burada tekrar kontrol etmek güvenlik için iyi)
+              const quantum = parseInt(rrQuantumInput.value);
+             if (isNaN(quantum) || quantum <= 0) {
+                showError("Lütfen geçerli bir Round Robin zaman dilimi (>0) girin.");
+                 return;
+             }
+             // Hata mesajı yoksa gizle (hata olabilir ama başka bir nedenden - validateInput'a da güveniyoruz)
+             hideError();
+             // Önceki simülasyonlardan kalan sonuçları temizle
+            algorithmResultsDisplay.innerHTML = ''; // Tekil algoritma sonuçlarını içeren divi temizle
+            averageMetricsTableBody.innerHTML = ''; // Ortalama metrikler tablosunun body'sini temizle
+            resultSection.style.display = 'block'; // Sonuçlar bölümünü görünür yap
+
+
+             const averageResults = []; // Her algoritmanın ortalama sonuçlarını bu dizide toplayacağız
+
+            // --- Simülasyonları Çalıştırma ve Sonuçları Gösterme Adımları ---
+
+            // 1. FCFS Simülasyonunu Çalıştır
+             const fcfsResult = runFCFS(processes);
+             // FCFS sonuçlarını arayüzde görüntüle ve ortalama sonuçları al
+             const fcfsAverage = displayResults('FCFS', fcfsResult);
+             if (fcfsAverage) averageResults.push(fcfsAverage); // Eğer sonuçlar geçerliyse ortalamayı ekle
+
+            // 2. SJF (Kesmesiz) Simülasyonunu Çalıştır
+             const sjfResult = runSJF_NonPreemptive(processes);
+             // SJF sonuçlarını arayüzde görüntüle ve ortalama sonuçları al
+             const sjfAverage = displayResults('SJF (Kesmesiz)', sjfResult);
+             if (sjfAverage) averageResults.push(sjfAverage);
+
+            // 3. Round Robin Simülasyonunu Çalıştır
+            const rrResult = runRoundRobin(processes, quantum);
+            // RR sonuçlarını arayüzde görüntüle ve ortalama sonuçları al
+            const rrAverage = displayResults(`Round Robin (q=${quantum})`, rrResult); // Algoritma adına quantum değerini ekle
+             if (rrAverage) averageResults.push(rrAverage);
+
+
+             // --- Karşılaştırma Tablosunu Doldurma ve Vurgulama ---
+             // Tüm algoritmalar çalıştıktan sonra toplanan ortalama metrik sonuçlarını kullan.
+             if(averageResults.length > 0) { // Eğer en az bir algoritma sonuç üretebildiyse tabloyu doldur.
+                 averageResults.forEach(avg => {
+                    const row = averageMetricsTableBody.insertRow(); // Ortalama tablo body'sine yeni bir satır ekle
+                    // Satırın HTML içeriğini ortalama metriklerle doldur
+                    row.innerHTML = `
+                        <td>${avg.name}</td>
+                        <td>${avg.averageWaitingTime.toFixed(2)} ms</td>
+                        <td>${avg.averageTurnaroundTime.toFixed(2)} ms</td>
+                        <td>${avg.averageResponseTime.toFixed(2)} ms</td>
+                    `;
+                 });
+                  // Ortalama tablo dolunca, en iyi değerleri vurgula
+                  highlightMinMetrics(averageResults);
+              } else {
+                  // Eğer hiçbir algoritma sonuç üretemediyse ortalama tablo boş kalır veya bir mesaj gösterilebilir.
+                   averageMetricsTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Hiçbir algoritma için geçerli sonuç üretilemedi.</td></tr>';
+              }
+
+             // Simülasyonlar bittikten sonra otomatik olarak sonuçlar bölümüne kaydır (scroll)
+             resultSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+
+        // -- Olay Dinleyiciler (Event Listeners) --
+        // Arayüzdeki kullanıcı etkileşimlerini dinleyen ve ilgili fonksiyonları çalıştıran kodlar.
+
+        // "İşlemi Ekle" butonu tıklandığında addProcess fonksiyonunu çalıştır
+        addProcessBtn.addEventListener('click', addProcess);
+        // "Simülasyonları Çalıştır" butonu tıklandığında runAllSimulations fonksiyonunu çalıştır
+        runSimulationBtn.addEventListener('click', runAllSimulations);
+
+         // Eklenen işlem listesi içindeki sil butonlarının tıklanmasını dinle (Event Delegation kullanılır)
+         // Listeyi (ul elementi) dinleriz, bir click olayı olduğunda hedefin (event.target) Sil butonu olup olmadığını kontrol ederiz.
+         processListUl.addEventListener('click', (event) => {
+            // Eğer tıklanan element bir BUTTON elementi ise VE text içeriği "Sil" ise
+            if (event.target.tagName === 'BUTTON' && event.target.textContent === 'Sil') {
+                 // Butonun "data-index" attribute'unda sakladığımız orijinal işlem indexini al
+                 const indexToDelete = parseInt(event.target.dataset.index);
+                 // removeProcess fonksiyonunu çağırarak ilgili işlemi sil
+                 removeProcess(indexToDelete);
+            }
+         });
+
+         // Giriş (input) alanlarındayken Enter tuşuna basma olayını dinle
+        document.addEventListener('keypress', (event) => {
+             // Eğer event'in geldiği element bir INPUT ise
+             if (event.target.tagName === 'INPUT') {
+                // Ve basılan tuş "Enter" ise
+                if (event.key === 'Enter') {
+                   // Hangi inputta olunduğunu ID'sine göre kontrol et
+                   if (event.target.id === 'processID' || event.target.id === 'arrivalTime' || event.target.id === 'burstTime') {
+                       // İşlem bilgi inputlarındaysa, "İşlemi Ekle" butonuna click olayını simüle et
+                       addProcessBtn.click();
+                       event.preventDefault(); // Enter tuşunun varsayılan form gönderme vb. davranışını engelle
+                   } else if (event.target.id === 'rrQuantum') {
+                       // Round Robin Quantum inputundaysa, "Simülasyonları Çalıştır" butonuna click olayını simüle et
+                       // Ancak sadece simülasyon butonu şu an aktifse (disabled değilse) çalıştır
+                        // Quantumun geçerliliğini burada hızlıca kontrol etmek iyi olabilir, ana check runAllSimulations içinde de var.
+                         const quantumValue = parseInt(rrQuantumInput.value);
+                         if (!isNaN(quantumValue) && quantumValue > 0 && !runSimulationBtn.disabled) {
+                             runSimulationBtn.click();
+                             event.preventDefault();
+                         } else if (!runSimulationBtn.disabled){ // Eğer quantum geçerli değil ama buton enable görünüyorsa (başka input geçerli gibi algılanmıştır)
+                               // Quantum geçerlilik hatası için UI geri bildirimi verebiliriz. Browser'ın kendi validation balonu fena değil.
+                               rrQuantumInput.reportValidity(); // HTML5 validation pop-up'ını gösterir
+                               event.preventDefault();
+                         }
+                   }
+               }
+             }
+        });
+
+        // Round Robin Quantum inputundaki değişiklikleri (yazıldığında) dinle.
+        // Geçerli bir sayı girilmezse Run butonunu devre dışı bırakmak için.
+        rrQuantumInput.addEventListener('input', () => {
+            const quantumValue = parseInt(rrQuantumInput.value);
+            // Input doluysa ve geçerli bir sayı değilse hata göster. Boş olması hata sayılmaz (listenin durumuna göre yönetilir).
+             if (rrQuantumInput.value.trim() !== "" && (isNaN(quantumValue) || quantumValue <= 0)) {
+                 showError("Round Robin Zaman Dilimi pozitif bir sayı olmalıdır.");
+             } else {
+                  // Eğer Quantum geçerli ve bir hata mesajı gösterilmiyorsa, hideError'ı çağır (bu da updateSimulationButtonState çağırır)
+                   // Sadece Quantum ile ilgili bir hata varsa gizler, başka hata varsa error kalır.
+                  if(errorMessage.textContent.includes("Round Robin Zaman Dilimi")) {
+                      hideError(); // Sadece bu hatayı gizle
+                  }
+             }
+             // Input geçerliliğine (ve listenin durumuna) göre simülasyon butonunu aktif/pasif yap.
+             updateSimulationButtonState();
+        });
+
+
+         // Sayfa yüklendiğinde (DOM tamamen parse edildiğinde) çalışacak fonksiyon.
+         document.addEventListener('DOMContentLoaded', () => {
+             // Başlangıçta arayüzü ayarla: İşlem listesi boş olarak gösterilir, ilgili mesaj ve buton durumu ayarlanır.
+             displayProcessList();
+             // RR Quantum inputu durumu başlangıçta set edilir (liste boş olacağı için muhtemelen disable)
+             updateSimulationButtonState();
+         });
+
+
+    </script>
+    <!-- JavaScript Kodları Sonu -->
+
+</body>
+</html>

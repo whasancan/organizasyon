@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İşlemci Zamanlama Simülasyonu ve Karşılaştırması</title>
+
+    <style>
+        /* CSS Kodları: Görsel tema ve düzen ayarları. Bu kısımlar sunumun algoritma içeriği için detaylı anlatılmayacak. */
+        :root {
+            --primary-bg: #0e1a2a;
+            --secondary-bg: #1c2b3a;
+            --text-color: #eef2ff;
+            --header-bg: #071320;
+            --header-text: #a7ffeb;
+
+            --accent-blue: #4fc3f7;
+            --accent-purple: #b39ddb;
+            --accent-yellow: #ffeb3b;
+            --accent-red: #ff5252;
+
+            --border-color: #3e5064;
+            --input-bg: #2a3a4b;
+
+            --glow-subtle: 0 0 4px var(--accent-blue);
+            --glow-strong: 0 0 8px var(--accent-blue), 0 0 15px var(--accent-blue), 0 0 25px rgba(79, 195, 247, 0.4);
+
+            --gantt-scale: 15px;
+
+            /* Gantt Çubuğu Renk Paleti */
+            --color-p1: #00f0b5; /* Bright Teal */
+            --color-p2: #40c4ff; /* Sky Blue */
+            --color-p3: #f50057; /* Rose */
+            --color-p4: #e040fb; /* Purple */
+            --color-p5: #ffc107; /* Amber */
+            --color-p6: #64dd17; /* Light Green */
+            --color-p7: #ff8a80; /* Red */
+            --color-p8: #8c9eff; /* Indigo */
+            --color-p9: #b2ff59; /* Lime */
+            --color-p10: #ffea00; /* Yellow */
+         }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 0;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            scroll-behavior: smooth;
+        }
+
+        header {
+            background: var(--header-bg);
+            color: var(--header-text);
+            padding: 2rem 0;
+            text-align: center;
+            margin-bottom: 3rem;
+            border-bottom: 3px solid var(--accent-blue);
+            box-shadow: var(--glow-strong);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 3.2rem;
+            color: var(--header-text);
+            text-shadow: 0 0 8px rgba(167, 255, 235, 0.8);
+        }
+         header p {
+             margin-top: 0.6rem;
+             color: #a0a4d9;
+             font-size: 1.1em;
+         }
+
+        main {
+            max-width: 1200px;
+            margin: auto;
+            padding: 0 1.8rem;
+        }
+
+        section {
+            background: var(--secondary-bg);
+            padding: 3rem;
+            margin-bottom: 3rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+             position: relative;
+        }
+         section::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            height: 2px;
+            background: var(--accent-purple);
+            box-shadow: 0 0 8px rgba(179, 157, 219, 0.6);
+             border-radius: 1px;
+         }
+         main section:last-of-type::after {
+             display: none;
+         }
+
+        section h2 {
+            color: var(--accent-blue);
+            border-bottom: 2px solid var(--accent-purple);
+            padding-bottom: 1.2rem;
+            margin-bottom: 2.5rem;
+             text-shadow: 0 0 5px rgba(79, 195, 247, 0.5);
+        }
+
+         h3 {
+            color: var(--text-color);
+            margin-top: 2.5rem;
+            margin-bottom: 1.2rem;
+             border-bottom: 1px dashed var(--border-color);
+             padding-bottom: 0.8rem;
+             font-size: 1.4em;
+        }
+
+        .input-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            align-items: flex-end;
+        }
+
+        .input-group {
+             flex: 1;
+             min-width: 200px;
+             max-width: 300px;
+             display: flex;
+             flex-direction: column;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.8rem;
+            color: var(--accent-purple);
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+        .input-area input[type="text"],
+        .input-area input[type="number"],
+         #rrQuantum {
+            padding: 1.1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 1em;
+             width: 100%;
+            box-sizing: border-box;
+             -moz-appearance: textfield;
+        }
+        .input-area input::-webkit-outer-spin-button,
+        .input-area input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+
+        .input-area input[type="text"]:focus,
+        .input-area input[type="number"]:focus,
+        #rrQuantum:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: var(--glow-subtle);
+        }
+
+
+        button {
+            padding: 1.1rem 2.5rem;
+            background-color: var(--accent-blue);
+            color: var(--header-bg);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.1s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+             letter-spacing: 0.5px;
+             box-shadow: var(--glow-subtle);
+        }
+
+        button:hover {
+            background-color: #63a4ff;
+            box-shadow: 0 0 10px var(--accent-blue);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+             background-color: #3f90f7;
+             box-shadow: 0 0 5px var(--accent-blue);
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background-color: #455a64;
+            color: #808080;
+            cursor: not-allowed;
+            opacity: 0.7;
+            box-shadow: none;
+            transform: none;
+        }
+
+        #processList {
+            margin-top: 3rem;
+             border-top: 1px solid var(--border-color);
+            padding-top: 2.5rem;
+        }
+
+         #processList ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+         }
+
+         #processList li {
+            background-color: #2a3a4b;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px dashed var(--accent-purple);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+             font-size: 1.1em;
+         }
+
+          #processList li span {
+              flex-grow: 1;
+               margin-right: 1.5rem;
+                color: var(--text-color);
+          }
+          #processList li strong {
+              color: var(--header-text);
+              text-shadow: var(--glow-subtle);
+          }
+
+         #processList li button {
+            padding: 0.5rem 1rem;
+            font-size: 0.9em;
+            background-color: var(--accent-red);
+             color: white;
+            text-transform: none;
+            flex-shrink: 0;
+             box-shadow: none;
+             transition: background-color 0.3s ease, box-shadow 0.3s ease;
+         }
+          #processList li button:hover {
+            background-color: #e53935;
+             box-shadow: 0 0 8px var(--accent-red);
+             color: white;
+             transform: none;
+         }
+
+        .results-container {
+             margin-top: 3rem;
+             padding-top: 2rem;
+        }
+
+         .algorithm-result-block {
+             background: #213040;
+             padding: 2.5rem;
+             margin-bottom: 3rem;
+             border-radius: 10px;
+             border: 1px solid var(--border-color);
+             box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4);
+         }
+          .algorithm-result-block h3 {
+               margin-top: 0;
+               border-bottom-color: var(--accent-yellow);
+               color: var(--header-text);
+                text-shadow: 0 0 4px rgba(167, 255, 235, 0.6);
+          }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        table th, table td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+             vertical-align: middle;
+        }
+
+        table th {
+            background-color: #263238;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            font-weight: bold;
+            border-bottom: 2px solid var(--accent-blue);
+            font-size: 1em;
+        }
+         table th:first-child,
+         table td:first-child {
+            width: 12%;
+         }
+
+        table tbody tr:nth-child(even) {
+            background-color: #213040;
+        }
+        table tbody tr:hover {
+            background-color: #304050;
+             color: var(--header-text);
+        }
+         table td {
+             color: var(--text-color);
+         }
+
+        table.average-table th {
+             background-color: var(--accent-purple);
+             color: var(--secondary-bg);
+              border-bottom: 2px solid var(--accent-yellow);
+              font-size: 1.1em;
+         }
+         table.average-table td {
+             font-weight: bold;
+             color: var(--text-color);
+             font-size: 1.1em;
+         }
+
+         .min-metric {
+             font-weight: bold;
+             color: var(--accent-yellow);
+             text-shadow: 0 0 6px rgba(255, 235, 59, 0.8);
+             background-color: rgba(255, 235, 59, 0.15);
+         }
+
+        .gantt-chart-container {
+            margin: 2.5rem 0;
+            padding: 1.8rem 0;
+            background: #1a2636;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            position: relative;
+             box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+         .gantt-chart-container h4 {
+             margin-top: 0;
+             padding-left: 1.8rem;
+             color: var(--accent-yellow);
+             margin-bottom: 1.8rem;
+             text-shadow: 0 0 6px rgba(255, 235, 59, 0.5);
+         }
+
+        .gantt-chart {
+            position: relative;
+            width: max-content;
+            height: 80px;
+            overflow-x: auto;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            padding-bottom: 40px;
+        }
+
+        .process-block {
+            height: 60px;
+            text-align: center;
+            line-height: 60px;
+            color: #111;
+            font-size: 1em;
+            font-weight: bold;
+            border-right: 1px solid rgba(0, 0, 0, 0.3);
+            box-sizing: border-box;
+            position: relative;
+            flex-shrink: 0;
+            min-width: 15px;
+             box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+             text-shadow: 0 0 2px rgba(255, 255, 255, 0.3);
+        }
+
+         .process-block[title]:hover::after {
+              content: attr(title);
+              position: absolute;
+              bottom: 100%;
+              left: 50%;
+              transform: translateX(-50%);
+              background-color: rgba(30, 40, 50, 0.95);
+              color: var(--text-color);
+              padding: 6px 12px;
+              border-radius: 5px;
+              font-size: 0.85em;
+              white-space: nowrap;
+              z-index: 100;
+              margin-bottom: 8px;
+              border: 1px solid var(--border-color);
+               box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+              pointer-events: none;
+          }
+
+
+        .time-line {
+             position: absolute;
+             bottom: 30px;
+             left: 1rem;
+             right: 1rem;
+             height: 1px;
+             background-color: var(--accent-purple);
+             box-shadow: 0 0 5px rgba(179, 157, 219, 0.5);
+        }
+
+        .time-mark {
+            position: absolute;
+            bottom: 5px;
+            transform: translateX(-50%);
+            font-size: 0.8em;
+            color: var(--text-color);
+            z-index: 1;
+            white-space: nowrap;
+            padding: 2px 6px;
+            background: var(--secondary-bg);
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+         .gantt-chart > .time-mark:first-child {
+             transform: translateX(0);
+         }
+
+
+        .process-block .time-end {
+            position: absolute;
+            bottom: -25px;
+            right: -0.6rem;
+            font-size: 0.7em;
+            color: var(--text-color);
+             transform: translateX(50%);
+             padding: 3px 6px;
+             background: #213040;
+             border-radius: 4px;
+             white-space: nowrap;
+             border: 1px solid var(--border-color);
+             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+
+        .note {
+            font-size: 0.95em;
+            color: #b0bec5;
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: #1a2636;
+            border-left: 4px solid var(--accent-purple);
+            border-radius: 6px;
+             box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.3);
+        }
+        .error {
+            color: var(--accent-red);
+            font-weight: bold;
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: #3a1d20;
+            border: 1px solid var(--accent-red);
+            border-radius: 6px;
+             box-shadow: 0 2px 8px rgba(255, 82, 82, 0.3);
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 3rem;
+            background: var(--header-bg);
+            color: var(--text-color);
+            font-size: 0.9em;
+             border-top: 1px solid var(--accent-blue);
+        }
+
+        @media (max-width: 768px) {
+            header h1 { font-size: 2.2rem; }
+            header p { font-size: 1em; }
+            section { padding: 1.5rem; margin-bottom: 2rem; }
+            section::after { display: none; }
+             section h2 { font-size: 1.8em; margin-bottom: 1.5rem; }
+             h3 { font-size: 1.2em; margin-top: 2rem; }
+
+            .input-area { flex-direction: column; align-items: stretch; gap: 1.5rem; }
+            .input-group { min-width: auto; max-width: none; }
+            button { width: 100%; padding: 1rem 1.5rem; font-size: 1em;}
+
+             #processList li { padding: 1rem; font-size: 1em; }
+
+            table th, table td { padding: 10px 8px; font-size: 0.9em; }
+             table th:first-child, table td:first-child { width: 15%; }
+
+             table.average-table th, table.average-table td { font-size: 1em; }
+
+            .gantt-chart { height: 60px; padding-bottom: 30px; }
+            .process-block { height: 40px; line-height: 40px; font-size: 0.85em; }
+            .time-line { bottom: 20px; }
+            .time-mark { bottom: 0px; font-size: 0.7em;}
+             .process-block .time-end { bottom: -20px; font-size: 0.6em; }
+
+            .note, .error { padding: 1rem; font-size: 0.85em; }
+        }
+         @media (max-width: 480px) {
+             header h1 { font-size: 1.8rem;}
+             header p { font-size: 0.9em;}
+             main { padding: 0 1rem;}
+             section { padding: 1rem; margin-bottom: 1.5rem;}
+              section h2 { font-size: 1.5em; margin-bottom: 1.2rem; }
+             h3 { font-size: 1.1em; margin-top: 1.5rem;}
+             .input-area { gap: 1rem; }
+
+              #processList li { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+             #processList li span { margin-right: 0; margin-bottom: 0.5rem; }
+
+             table th, table td { font-size: 0.8em; }
+              table th:first-child, table td:first-child { width: auto; }
+
+             .gantt-chart { padding-left: 0.5rem; padding-right: 0.5rem;}
+              .time-line { left: 0.5rem; right: 0.5rem; }
+
+             .process-block .time-end {
+                   bottom: -18px;
+                   right: 0;
+                   transform: translateX(0%);
+             }
+              .process-block[title]:hover::after { display: none !important; }
+         }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>İşlemci Zamanlama Simülasyonu</h1>
+        <p>FCFS, SJF ve Round Robin Algoritmaları Karşılaştırması</p>
+    </header>
+
+    <main>
+        <section id="introduction">
+            <h2>Giriş</h2>
+            <p>
+                İşletim sistemlerinin temel görevlerinden biri olan işlemci zamanlama, birden fazla hazır durumdaki işlemin CPU'yu hangi sıra ve süreyle kullanacağını belirler. Doğru zamanlama algoritması, sistemin verimliliğini, kullanıcı etkileşimini (tepki süresi) ve işlemler arası adilliği doğrudan etkiler. Bu simülasyon, sık kullanılan üç temel algoritmayı - <strong style="color:var(--accent-blue);">İlk Gelen İlk Çıkar (FCFS)</strong>, <strong style="color:var(--accent-blue);">En Kısa İş Önce (Kesmesiz SJF)</strong> ve <strong style="color:var(--accent-blue);">Round Robin (RR)</strong> - karşılaştırmalı olarak incelemek için tasarlanmıştır.
+            </p>
+            <p>
+                Kendi tanımladığınız işlem seti üzerinden bu algoritmaların çalışma mantığını görsel (Gantt şeması) ve sayısal (bekleme, dönüş ve tepki süreleri) sonuçlarla görerek farkları daha net anlayabilirsiniz.
+            </p>
+        </section>
+
+        <section id="input-section">
+            <h2>İşlem Bilgilerini Girin</h2>
+
+            <div class="input-area">
+                 <div class="input-group">
+                    <label for="processID">İşlem Adı</label>
+                    <input type="text" id="processID" value="P" required>
+                 </div>
+                <div class="input-group">
+                    <label for="arrivalTime">Varış Zamanı</label>
+                    <input type="number" id="arrivalTime" value="0" min="0" required>
+                </div>
+                <div class="input-group">
+                    <label for="burstTime">CPU Süresi (Burst Time)</label>
+                    <input type="number" id="burstTime" value="5" min="1" required>
+                </div>
+                 <div>
+                    <button id="addProcessBtn">İşlemi Ekle</button>
+                 </div>
+            </div>
+
+             <div id="processList">
+                <h3>Eklenen İşlemler Listesi</h3>
+                 <p id="noProcessMessage">Henüz işlem eklenmedi. Lütfen yukarıdaki formdan işlem ekleyin.</p>
+                 <ul></ul>
+             </div>
+
+            <div class="input-area" style="margin-top: 3rem; border-top: 1px dashed var(--border-color); padding-top: 2rem;">
+                 <div class="input-group">
+                     <label for="rrQuantum">Round Robin Zaman Dilimi (q)</label>
+                     <input type="number" id="rrQuantum" value="3" min="1">
+                 </div>
+                <div>
+                     <button id="runSimulationBtn">Simülasyonları Çalıştır</button>
+                </div>
+            </div>
+
+             <p class="note">Simülasyonu çalıştırmak için en az 1 işlem eklemelisiniz. İşlemlerinizi ekledikten ve Round Robin zaman dilimini belirledikten sonra "Simülasyonları Çalıştır" butonuna basın.</p>
+             <p id="error-message" class="error" style="display:none;"></p>
+        </section>
+
+        <section id="simulation-results" style="display:none;">
+            <h2>Simülasyon Sonuçları ve Karşılaştırma</h2>
+
+             <div id="algorithmResultsDisplay"></div>
+
+            <h3>Genel Performans Karşılaştırması (Ortalamalar)</h3>
+             <p>Farklı algoritmaların, belirtilen işlem setiniz için ortalama performans metrikleri karşılaştırması. Düşük değerler genellikle daha iyi performans anlamına gelir.</p>
+            <table class="average-table" id="averageMetricsTable">
+                <thead>
+                    <tr>
+                        <th>Algoritma</th> <th>Ort. Bekleme Süresi</th> <th>Ort. Dönüş Süresi</th> <th>Ort. Tepki Süresi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+
+             <p class="note">
+                <strong>Bekleme Süresi (Waiting Time):</strong> İşlemin çalışmaya hazır olduğu, ancak CPU'ya atanmayı beklediği toplam süre.<br>
+                <strong>Dönüş Süresi (Turnaround Time):</strong> İşlemin sisteme girdiği an itibarıyla tamamen yürütülüp bittiği ana kadar geçen toplam süre.<br>
+                <strong>Tepki Süresi (Response Time):</strong> İşlemin sisteme girdiği (varış) an itibarıyla ilk kez CPU'ya atandığı ana kadar geçen süre.<br>
+                 Metriklerdeki <strong class="min-metric" style="color:var(--accent-yellow); text-shadow:none; background-color:transparent; border:none; padding:0;">sarı renkli vurgu</strong>, o metrik için en düşük (genellikle en iyi) değeri belirtir.
+            </p>
+        </section>
+    </main>
+
+    <footer>
+        <p>© 2023 İşlemci Zamanlama Simülasyonu | Sunum İçin Hazırlanmıştır</p>
+    </footer>
+
+    <script>
+        let processes = [];
+        const addProcessBtn = document.getElementById('addProcessBtn');
+        const runSimulationBtn = document.getElementById('runSimulationBtn');
+        const processListUl = document.querySelector('#processList ul');
+        const noProcessMessage = document.getElementById('noProcessMessage');
+        const resultSection = document.getElementById('simulation-results');
+        const algorithmResultsDisplay = document.getElementById('algorithmResultsDisplay');
+        const processIDInput = document.getElementById('processID');
+        const arrivalTimeInput = document.getElementById('arrivalTime');
+        const burstTimeInput = document.getElementById('burstTime');
+        const rrQuantumInput = document.getElementById('rrQuantum');
+        const errorMessage = document.getElementById('error-message');
+        const averageMetricsTableBody = document.querySelector('#averageMetricsTable tbody');
+
+         const processColors = [
+             '#00f0b5', '#40c4ff', '#f50057', '#e040fb', '#ffc107', '#64dd17', '#ff8a80',
+             '#8c9eff', '#b2ff59', '#ffea00', '#f48fb1', '#a7ffeb', '#fbc02d', '#e57373',
+             '#66bb6a', '#ffee58', '#ab47bc'
+         ];
+         function getProcessColor(processId) {
+             let hash = 0;
+             if (processId.length === 0) return processColors[0];
+             for (let i = 0; i < processId.length; i++) {
+                 const char = processId.charCodeAt(i);
+                 hash = ((hash << 5) - hash) + char;
+                 hash = hash & hash;
+             }
+             const index = Math.abs(hash) % processColors.length;
+             return processColors[index];
+         }
+
+        function displayProcessList() {
+            processListUl.innerHTML = '';
+            if (processes.length === 0) {
+                noProcessMessage.style.display = 'block';
+                runSimulationBtn.disabled = true;
+                 rrQuantumInput.disabled = true;
+            } else {
+                noProcessMessage.style.display = 'none';
+                 const sortedForDisplay = [...processes].sort((a, b) => {
+                     if (a.arrivalTime !== b.arrivalTime) return a.arrivalTime - b.arrivalTime;
+                     return a.id.localeCompare(b.id);
+                 });
+                sortedForDisplay.forEach((p) => {
+                     const originalIndex = processes.findIndex(proc =>
+                         proc.id === p.id && proc.arrivalTime === p.arrivalTime && proc.burstTime === p.burstTime
+                     );
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span><strong>${p.id}</strong> (Varış: ${p.arrivalTime}, Burst: ${p.burstTime})</span>
+                        <button data-index="${originalIndex}">Sil</button>
+                    `;
+                    processListUl.appendChild(li);
+                });
+            }
+             updateSimulationButtonState();
+        }
+
+        function addProcess() {
+            const id = processIDInput.value.trim() || `P${processes.length + 1}`;
+            const arrivalTime = parseInt(arrivalTimeInput.value);
+            const burstTime = parseInt(burstTimeInput.value);
+
+            if (isNaN(arrivalTime) || isNaN(burstTime) || arrivalTime < 0 || burstTime <= 0) {
+                 showError("Lütfen geçerli Varış Zamanı (>=0) ve CPU Süresi (>0) girin.");
+                return;
+            }
+             if (processes.some(p => p.id === id)) {
+                 showError(`'${id}' işlem adı zaten mevcut. Lütfen farklı bir ad girin.`);
+                 return;
+             }
+
+            hideError();
+            processes.push({ id: id, arrivalTime: arrivalTime, burstTime: burstTime });
+            processIDInput.value = `P${processes.length + 1}`;
+             burstTimeInput.value = '5';
+             processIDInput.focus();
+
+            displayProcessList();
+             resultSection.style.display = 'none';
+              algorithmResultsDisplay.innerHTML = '';
+              averageMetricsTableBody.innerHTML = '';
+        }
+
+        function removeProcess(index) {
+             if (!isNaN(index) && index >= 0 && index < processes.length) {
+                 processes.splice(index, 1);
+                 displayProcessList();
+                  resultSection.style.display = 'none';
+                   algorithmResultsDisplay.innerHTML = '';
+                  averageMetricsTableBody.innerHTML = '';
+             }
+        }
+
+        function showError(message) {
+             errorMessage.textContent = message;
+             errorMessage.style.display = 'block';
+             updateSimulationButtonState();
+        }
+
+        function hideError() {
+             errorMessage.style.display = 'none';
+             updateSimulationButtonState();
+        }
+
+         function updateSimulationButtonState() {
+             const quantumValue = parseInt(rrQuantumInput.value);
+              const isQuantumValid = !isNaN(quantumValue) && quantumValue > 0;
+
+             if (processes.length === 0 || errorMessage.style.display !== 'none' || (processes.length > 0 && !isQuantumValid) ) {
+                  runSimulationBtn.disabled = true;
+             } else {
+                  runSimulationBtn.disabled = false;
+             }
+              rrQuantumInput.disabled = processes.length === 0 || errorMessage.style.display !== 'none';
+         }
+
+         // Bu fonksiyon simülasyon sonucundaki metrikleri hesaplar.
+         function calculateMetrics(originalProcesses, ganttData) {
+             const completionTimes = {};
+             const firstStartTime = {};
+             const processMetrics = {};
+
+             ganttData.forEach(block => {
+                 if (block.id !== 'Idle') {
+                     completionTimes[block.id] = block.end;
+                     if (!firstStartTime.hasOwnProperty(block.id)) {
+                         firstStartTime[block.id] = block.start;
+                     }
+                 }
+             });
+
+             let totalWaitingTime = 0;
+             let totalTurnaroundTime = 0;
+             let totalResponseTime = 0;
+
+             originalProcesses.forEach(p => {
+                 const completionTime = completionTimes[p.id];
+                 const arrivalTime = p.arrivalTime;
+                 const burstTime = p.burstTime;
+                 const firstStart = firstStartTime[p.id];
+
+                 if (completionTime !== undefined && !isNaN(completionTime)) {
+                     const turnaroundTime = completionTime - arrivalTime;
+                     const waitingTime = turnaroundTime - burstTime;
+                     const responseTime = (firstStart !== undefined && !isNaN(firstStart)) ? firstStart - arrivalTime : 0;
+
+                     processMetrics[p.id] = {
+                         waitingTime: waitingTime,
+                         turnaroundTime: turnaroundTime,
+                         responseTime: responseTime,
+                         firstStartTime: firstStart,
+                         completionTime: completionTime
+                     };
+
+                     totalWaitingTime += waitingTime;
+                     totalTurnaroundTime += turnaroundTime;
+                     totalResponseTime += responseTime;
+                 } else {
+                      processMetrics[p.id] = {
+                          waitingTime: NaN, turnaroundTime: NaN, responseTime: NaN,
+                          firstStartTime: NaN, completionTime: NaN
+                      };
+                 }
+             });
+
+              const numProcesses = originalProcesses.length;
+              const avgWaitingTime = numProcesses > 0 ? totalWaitingTime / numProcesses : 0;
+              const avgTurnaroundTime = numProcesses > 0 ? totalTurnaroundTime / numProcesses : 0;
+              const avgResponseTime = numProcesses > 0 ? totalResponseTime / numProcesses : 0;
+
+            return {
+                 processMetrics: processMetrics,
+                 averageWaitingTime: avgWaitingTime,
+                 averageTurnaroundTime: avgTurnaroundTime,
+                 averageResponseTime: avgResponseTime
+            };
+        }
+
+         function getUniqueTimelinePoints(ganttData) {
+             const points = new Set([0]);
+             ganttData.forEach(block => {
+                 if (block.id !== 'Idle' && block.start !== undefined && block.end !== undefined) {
+                      points.add(block.start);
+                      points.add(block.end);
+                 }
+             });
+             return Array.from(points).sort((a, b) => a - b);
+         }
+
+        // FCFS Algoritması Simülasyonu
+        function runFCFS(processes) {
+             // "İlk algoritmamız FCFS, yani İlk Gelen İlk Çıkar."
+             // "Kuralı basit: İşlemler sisteme hangi sırayla gelirse, CPU'yu o sırayla kullanır ve başladığında bitene kadar kesilmez."
+
+             // "Kodda bunu yapmak için, gelen işlemleri varış zamanına göre sıralarız."
+            const sortedProcesses = [...processes].sort((a, b) => a.arrivalTime - b.arrivalTime);
+            const ganttData = [];
+            let currentTime = 0; // Simülasyonun geçerli zamanı
+
+            sortedProcesses.forEach(p => {
+                const startTime = Math.max(currentTime, p.arrivalTime);
+                const duration = p.burstTime;
+                const completionTime = startTime + duration;
+
+                ganttData.push({
+                    id: p.id,
+                    start: startTime,
+                    end: completionTime,
+                    duration: duration
+                });
+
+                // "Her işlem kendi Burst Time'ı boyunca kesintisiz çalışır, bu yüzden geçerli zaman, işlemin bittiği zamana ilerler."
+                currentTime = completionTime;
+            });
+
+             return { ganttData, ...calculateMetrics(processes, ganttData) };
+        }
+
+        // SJF (Kesmesiz) Algoritması Simülasyonu
+         function runSJF_NonPreemptive(processes) {
+             // " İkinci algoritma SJF, En Kısa İş Önce, bu kesmesiz versiyonu."
+             // " CPU boş kaldığında, o ana kadar sisteme varmış işlemlerden Burst Time'ı en kısa olanı seçer."
+             // " Önemli nokta: Seçilen işlem, başladığında kesilmeden tamamlanır."
+             const processesCopy = JSON.parse(JSON.stringify(processes));
+             let currentTime = 0;
+             const ganttData = [];
+             const arrivalQueue = [...processesCopy].sort((a, b) => a.arrivalTime - b.arrivalTime);
+             let arrivalIndex = 0;
+             const readyQueue = []; // Hazır kuyruğu
+
+             while (true) {
+                 // Yeni varışları hazır kuyruğuna ekle
+                 while(arrivalIndex < arrivalQueue.length && arrivalQueue[arrivalIndex].arrivalTime <= currentTime) {
+                      if (!readyQueue.some(p => p.id === arrivalQueue[arrivalIndex].id)) {
+                            readyQueue.push(arrivalQueue[arrivalIndex]);
+                       }
+                       arrivalIndex++;
+                 }
+
+                 // Eğer hazır kuyruk boş ve gelecek işlem kalmadıysa, döngüyü bitir.
+                 if (readyQueue.length === 0) {
+                      if (arrivalIndex >= arrivalQueue.length) {
+                          break;
+                      }
+                       // Kuyruk boşsa, zamanı bir sonraki varışa atla.
+                       const nextArrivalProcess = arrivalQueue[arrivalIndex];
+                       currentTime = Math.max(currentTime, nextArrivalProcess.arrivalTime);
+                       continue; // Atladığımız zamanda yeni varışları kontrol etmek için başa dön
+                 }
+
+                // "Hazır kuyruktaki işlemleri SJF kuralına göre sırala: En kısa Burst Time'a sahip olan önce gelir.
+                //  Eşitlik durumunda varış zamanına bakılır."
+                readyQueue.sort((a, b) => {
+                     if (a.burstTime !== b.burstTime) {
+                        return a.burstTime - b.burstTime;
+                    }
+                    return a.arrivalTime - b.arrivalTime; // FCFS tie-breaking
+                });
+
+                // "Sıralanmış kuyruğun başındaki (yani SJF kuralına göre en uygun) işlemi al ve çalıştır."
+                const processToRun = readyQueue.shift(); // En uygun işlemi al
+
+                const startTime = currentTime;
+                const duration = processToRun.burstTime;
+                const completionTime = currentTime + duration;
+
+                ganttData.push({
+                    id: processToRun.id,
+                    start: startTime,
+                    end: completionTime,
+                    duration: duration
+                });
+
+                // "İşlem kesilmeden bittiği için zamanı bitiş anına güncelleriz."
+                currentTime = completionTime;
+
+             } // Ana döngü sonu
+             return { ganttData, ...calculateMetrics(processes, ganttData) };
+         }
+
+        // Round Robin Algoritması Simülasyonu
+        function runRoundRobin(processes, quantum) {
+             // "Üçüncü ve son algoritmamız Round Robin."
+             // "Round Robin zaman paylaşımlıdır. Her işleme belirli bir zaman dilimi, yani 'quantum' kadar CPU hakkı verilir."
+             const processesCopy = JSON.parse(JSON.stringify(processes));
+             processesCopy.forEach(p => p.remainingTime = p.burstTime); // Kalan süreyi takip etmek için
+
+             let currentTime = 0;
+             const ganttData = [];
+             const arrivalQueue = [...processesCopy].sort((a, b) => a.arrivalTime - b.arrivalTime);
+             let arrivalIndex = 0;
+             const readyQueue = []; // Hazır kuyruğu
+
+             // Başlangıçta varmış işlemleri hazır kuyruğuna ekle
+             while(arrivalIndex < arrivalQueue.length && arrivalQueue[arrivalIndex].arrivalTime <= currentTime) {
+                 readyQueue.push(arrivalQueue[arrivalIndex]);
+                 arrivalIndex++;
+             }
+
+             while (true) {
+                  // Eğer hazır kuyruk boş ve gelecek işlem kalmadıysa, döngüyü bitir.
+                  if (readyQueue.length === 0) {
+                       if (arrivalIndex >= arrivalQueue.length) {
+                           break;
+                       }
+                       // Kuyruk boşsa, zamanı bir sonraki varışa atla.
+                       const nextArrivalProcess = arrivalQueue[arrivalIndex];
+                       currentTime = Math.max(currentTime, nextArrivalProcess.arrivalTime);
+                       continue; // Atladığımız zamanda yeni varışları kontrol etmek için başa dön
+                  }
+
+                // "Hazır kuyruğunun başındaki işlemi alırız (FCFS sırası)."
+                const processToRun = readyQueue.shift();
+
+                const startTime = currentTime;
+                // "İşlem, Quantum süresi VEYA kalan süresi (hangisi az ise) kadar çalışır."
+                const timeSlice = Math.min(quantum, processToRun.remainingTime);
+                const endTime = currentTime + timeSlice;
+
+                ganttData.push({
+                    id: processToRun.id,
+                    start: startTime,
+                    end: endTime,
+                    duration: timeSlice
+                });
+
+                processToRun.remainingTime -= timeSlice; // Kalan süreyi azalt
+                currentTime = endTime; // Zamanı çalışılan süre kadar ilerlet
+
+                // "Bu süre zarfında (işlem CPU'dayken) yeni varan işlemleri hazır kuyruğuna ekleriz."
+                 while(arrivalIndex < arrivalQueue.length && arrivalQueue[arrivalIndex].arrivalTime <= currentTime) {
+                     const newlyArrivedProcess = arrivalQueue[arrivalIndex];
+                      if (!readyQueue.some(p => p.id === newlyArrivedProcess.id && p.arrivalTime === newlyArrivedProcess.arrivalTime)) {
+                         readyQueue.push(newlyArrivedProcess); // Kuyruğun sonuna ekle
+                      }
+                     arrivalIndex++;
+                 }
+
+                // "Eğer işlem Quantum süresi sonunda hala bitmediyse..."
+                if (processToRun.remainingTime > 0) {
+                    //  "... kesilir ve hazır kuyruğunun EN SONUNA geri konur."
+                    readyQueue.push(processToRun);
+                } // Else: Bitti, kuyruğa dönmesine gerek yok.
+
+            } // Ana döngü sonu
+            return { ganttData, ...calculateMetrics(processes, ganttData) };
+        }
+
+        // Simülasyon sonuçlarını (Gantt, Tablolar) arayüzde gösterir.
+        // "Simülasyonlar bittikten sonra, bu fonksiyonlar (calculateMetrics ve displayResults) sonuçları hesaplar ve ekranda gördüğünüz Gantt şemalarını ve metrik tablolarını oluşturur."
+        function displayResults(algorithmName, results) {
+             const algoResultDiv = document.createElement('div');
+             algoResultDiv.classList.add('algorithm-result-block');
+             algorithmResultsDisplay.appendChild(algoResultDiv);
+
+             if (!results || !results.ganttData || results.ganttData.length === 0 || results.ganttData.every(b => b.id === 'Idle')) {
+                 algoResultDiv.innerHTML += `<h3>${algorithmName} Sonuçları</h3><p class="error">Simülasyon bu algoritma için sonuç üretemedi veya hiç işlem çalışmadı.</p>`;
+                 return null;
+             }
+
+             const uniqueTimes = getUniqueTimelinePoints(results.ganttData);
+
+            let resultHTML = `<h3>${algorithmName}</h3>`;
+
+            resultHTML += `
+                <div class="gantt-chart-container">
+                    <h4>Gantt Şeması</h4>
+                    <div class="gantt-chart">
+            `;
+            results.ganttData.forEach(block => {
+                 if (block.id !== 'Idle') {
+                     const blockDuration = block.duration;
+                     const blockColor = getProcessColor(block.id);
+                     resultHTML += `
+                        <div class="process-block"
+                             style="background-color: ${blockColor};
+                                    width: calc(${blockDuration} * var(--gantt-scale));"
+                             title="${block.id} (Başlangıç: ${block.start}, Bitiş: ${block.end}, Süre: ${block.duration})">
+                            ${block.id}
+                             <span class="time-end">${block.end}</span>
+                        </div>
+                    `;
+                 }
+            });
+
+            resultHTML += `<div class="time-line"></div>`;
+
+             uniqueTimes.forEach(time => {
+                  resultHTML += `
+                    <span class="time-mark"
+                          style="left: calc(1rem + ${time} * var(--gantt-scale));">
+                        ${time}
+                    </span>
+                 `;
+             });
+
+            resultHTML += `
+                     </div>
+                </div>
+            `;
+
+            resultHTML += `
+                <h4>Performans Metrikleri (İşlem Bazlı Detaylar)</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>İşlem</th> <th>Varış</th> <th>Burst</th>
+                             <th>İlk Başlama</th> <th>Tamamlanma</th> <th>Bekleme</th>
+                            <th>Dönüş</th> <th>Tepki</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+             const metricsMap = results.processMetrics;
+             [...processes].sort((a, b) => a.id.localeCompare(b.id)).forEach(p => {
+                 const metrics = metricsMap[p.id] || {};
+
+                 const firstStart = (metrics.firstStartTime !== undefined && !isNaN(metrics.firstStartTime)) ? metrics.firstStartTime : '-';
+                 const completion = (metrics.completionTime !== undefined && !isNaN(metrics.completionTime)) ? metrics.completionTime : '-';
+                 const waiting = (metrics.waitingTime !== undefined && !isNaN(metrics.waitingTime)) ? metrics.waitingTime.toFixed(2) : '-';
+                 const turnaround = (metrics.turnaroundTime !== undefined && !isNaN(metrics.turnaroundTime)) ? metrics.turnaroundTime.toFixed(2) : '-';
+                 const response = (metrics.responseTime !== undefined && !isNaN(metrics.responseTime)) ? metrics.responseTime.toFixed(2) : '-';
+
+                resultHTML += `
+                    <tr>
+                        <td>${p.id}</td>
+                        <td>${p.arrivalTime}</td>
+                         <td>${p.burstTime}</td>
+                         <td>${firstStart}</td>
+                         <td>${completion}</td>
+                        <td>${waiting}</td>
+                        <td>${turnaround}</td>
+                        <td>${response}</td>
+                    </tr>
+                `;
+            });
+
+            resultHTML += `
+                    </tbody>
+                </table>
+            `;
+
+            algoResultDiv.innerHTML = resultHTML;
+
+             return {
+                 name: algorithmName,
+                 averageWaitingTime: results.averageWaitingTime,
+                 averageTurnaroundTime: results.averageTurnaroundTime,
+                 averageResponseTime: results.averageResponseTime
+             };
+        }
+
+         function highlightMinMetrics(averageResults) {
+             if (!averageResults || averageResults.length === 0) return;
+
+             const metricsToHighlight = ['averageWaitingTime', 'averageTurnaroundTime', 'averageResponseTime'];
+             const colIndices = {
+                 averageWaitingTime: 1,
+                 averageTurnaroundTime: 2,
+                 averageResponseTime: 3
+             };
+
+             metricsToHighlight.forEach(metricKey => {
+                 let minMetric = Infinity;
+                 let minRowIndices = [];
+
+                 averageResults.forEach((result, index) => {
+                      const value = result[metricKey];
+                      if (typeof value === 'number' && !isNaN(value) && isFinite(value)) {
+                           if (value < minMetric) {
+                              minMetric = value;
+                              minRowIndices = [index];
+                           } else if (value === minMetric) {
+                              minRowIndices.push(index);
+                           }
+                      }
+                 });
+
+                 if (minRowIndices.length > 0 && minMetric !== Infinity) {
+                     minRowIndices.forEach(rowIndex => {
+                          const row = averageMetricsTableBody.rows[rowIndex];
+                           if (row) {
+                                const cellIndex = colIndices[metricKey];
+                                 if (cellIndex !== undefined && row.cells.length > cellIndex) {
+                                    row.cells[cellIndex].classList.add('min-metric');
+                                 }
+                           }
+                     });
+                 }
+             });
+         }
+
+        // Simülasyonların Çalıştırılması Ana Kontrol Fonksiyonu
+        // 'Simülasyonları Çalıştır' butonuna basılınca bu fonksiyon çalışır."
+        // "Burada önce FCFS, sonra SJF Kesmesiz ve son olarak da Round Robin algoritmaları sırayla çağırılarak simüle edilir."
+        // "Her algoritmanın simülasyon sonucu alınır ve sayfanın aşağısında gösterilir."
+        function runAllSimulations() {
+             if (processes.length === 0) {
+                showError("Lütfen simülasyonu çalıştırmak için en az bir işlem ekleyin.");
+                return;
+             }
+
+              const quantum = parseInt(rrQuantumInput.value);
+             if (isNaN(quantum) || quantum <= 0) {
+                showError("Lütfen geçerli bir Round Robin zaman dilimi (>0) girin.");
+                 return;
+             }
+             hideError();
+
+            algorithmResultsDisplay.innerHTML = '';
+            averageMetricsTableBody.innerHTML = '';
+            resultSection.style.display = 'block';
+
+             const averageResults = [];
+
+            // FCFS Simülasyonunu Çalıştır
+             const fcfsResult = runFCFS(processes);
+             const fcfsAverage = displayResults('FCFS', fcfsResult);
+             if (fcfsAverage) {
+                 averageResults.push(fcfsAverage);
+             }
+
+            // SJF (Kesmesiz) Simülasyonunu Çalıştır
+             const sjfResult = runSJF_NonPreemptive(processes);
+             const sjfAverage = displayResults('SJF (Kesmesiz)', sjfResult);
+             if (sjfAverage) {
+                 averageResults.push(sjfAverage);
+             }
+
+            // Round Robin Simülasyonunu Çalıştır
+            const rrResult = runRoundRobin(processes, quantum);
+            const rrAverage = displayResults(`Round Robin (q=${quantum})`, rrResult);
+             if (rrAverage) {
+                 averageResults.push(rrAverage);
+             }
+
+             // "Son olarak, algoritmaların ortalama performans metriklerini karşılaştıran bir tablo oluşturulur ve
+             //  en iyi (en düşük) değerler vurgulanır."
+             if(averageResults.length > 0) {
+                 averageMetricsTableBody.innerHTML = '';
+                 averageResults.forEach(avg => {
+                    const row = averageMetricsTableBody.insertRow();
+                    row.innerHTML = `
+                        <td>${avg.name}</td>
+                        <td>${avg.averageWaitingTime.toFixed(2)} ms</td>
+                        <td>${avg.averageTurnaroundTime.toFixed(2)} ms</td>
+                        <td>${avg.averageResponseTime.toFixed(2)} ms</td>
+                    `;
+                 });
+                  highlightMinMetrics(averageResults);
+             } else {
+                   averageMetricsTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-color);">Hiçbir algoritma için geçerli sonuç üretilemedi. Lütfen inputları ve Konsolu kontrol edin.</td></tr>';
+              }
+
+             resultSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ------------ Olay Dinleyiciler (Event Listeners) ------------
+        // Bu kısım kullanıcı etkileşimlerini yönetir (buton tıklamaları, klavye). Algoritma mantığı doğrudan burada değil.
+
+        addProcessBtn.addEventListener('click', addProcess);
+        runSimulationBtn.addEventListener('click', runAllSimulations);
+
+         processListUl.addEventListener('click', (event) => {
+            if (event.target.tagName === 'BUTTON' && event.target.textContent === 'Sil') {
+                 const indexToDelete = parseInt(event.target.dataset.index);
+                 removeProcess(indexToDelete);
+            }
+         });
+
+        document.addEventListener('keypress', (event) => {
+             if (event.target.tagName === 'INPUT') {
+                if (event.key === 'Enter') {
+                   if (event.target.id === 'processID' || event.target.id === 'arrivalTime' || event.target.id === 'burstTime') {
+                       addProcessBtn.click();
+                       event.preventDefault();
+                   } else if (event.target.id === 'rrQuantum') {
+                         const quantumValue = parseInt(rrQuantumInput.value);
+                         if (!isNaN(quantumValue) && quantumValue > 0 && !runSimulationBtn.disabled) {
+                             runSimulationBtn.click();
+                             event.preventDefault();
+                         } else if (!runSimulationBtn.disabled){
+                               rrQuantumInput.reportValidity();
+                               event.preventDefault();
+                         }
+                   }
+               }
+             }
+        });
+
+        rrQuantumInput.addEventListener('input', () => {
+            const quantumValue = parseInt(rrQuantumInput.value);
+             if (rrQuantumInput.value.trim() !== "" && (isNaN(quantumValue) || quantumValue <= 0)) {
+                 showError("Round Robin Zaman Dilimi pozitif bir sayı olmalıdır.");
+             } else {
+                   if(errorMessage.textContent.includes("Round Robin Zaman Dilimi")) {
+                      hideError();
+                   } else if (errorMessage.style.display !== 'none' && processes.length > 0){
+                      updateSimulationButtonState();
+                   } else {
+                        updateSimulationButtonState();
+                   }
+             }
+        });
+
+         document.addEventListener('DOMContentLoaded', () => {
+             displayProcessList();
+             updateSimulationButtonState();
+         });
+    </script>
+</body>
+</html>
